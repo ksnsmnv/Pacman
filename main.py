@@ -14,7 +14,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
         # создание самого лабиринта (из матрицы в виджет pygame)
-        screen.fill((255, 255, 80))
+        screen.fill((0, 0, 0))
         labyrinth.make(screen)
         pygame.display.flip()
         clock.tick(15)
@@ -35,8 +35,8 @@ class Labyrinth:
 
     def make(self, screen):
         # цвета для  каждого символа в лабиринте
-        # 0 - стена, 1 - можно ходить, 9 - место за полем, 2 - могут ходить только приведения
-        colors = {0: (255, 255, 255), 1: (0, 0, 0), 9: (255, 255, 80), 2: (0, 56, 56)}
+        # 0 - стена, 1 - можно ходить(по белому), 9 - место за полем, 2 - могут ходить только приведения
+        colors = {0: (0, 0, 120), 1: (255, 255, 255), 9: (0, 0, 0), 2: (0, 100, 0)}
         for y in range(self.height):
             for x in range(self.width):
                 rect = pygame.Rect(x * self.tile_size, y * self.tile_size, self.tile_size, self.tile_size)
