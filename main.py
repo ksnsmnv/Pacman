@@ -9,21 +9,25 @@ def main():
     pygame.init()
     size = 800, 800
     screen = pygame.display.set_mode(size)
+    # счет игрока на начало игры
+    score = 0
     # создание экзепляра лабиринта (из текствого файла в матрицу)
     labyrinth = Labyrinth()
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
     # создание экземпляра PacmanMoves, который задает движение пакмана
-    pacman_moves = PacmanMoves(labyrinth, pacman)
+    pacman_moves = PacmanMoves(labyrinth, pacman, score)
     # создание экземпляра точек
     dots = Dots()
+    # создание экземпляра точки-бонуса
+    bonus = Bonus(score)
     clock = pygame.time.Clock()
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        pacman_moves.change_pos()
+        pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
         # создание самого лабиринта (из матрицы в виджет pygame)
         labyrinth.make(screen)
@@ -92,28 +96,46 @@ class Pacman:
 
 
 class PacmanMoves:
-    def __init__(self, labyrinth, pacman):
+    def __init__(self, labyrinth, pacman, score):
         self.labyrinth = labyrinth
         self.pacman = pacman
+        self.score = score
 
-    def change_pos(self):
+    def change_pos(self, screen):
         # зменение позиции пакмана
         new_x, new_y = self.pacman.get_position()
         if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
             new_x += 27
         elif pygame.key.get_pressed()[pygame.K_LEFT]:
             new_x -= 1
+            # если эта точка имеет "точку", выполняется функция "plus_point"
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
         if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
             new_x -= 27
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
             new_x += 1
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
         if pygame.key.get_pressed()[pygame.K_UP]:
             new_y -= 1
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             new_y += 1
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
         # проверка : свободна ли клетка
         if self.labyrinth.tile_is_free((new_x, new_y)):
             self.pacman.set_position((new_x, new_y))
+
+    # прибавляется 10 очков к "score" и стирается точка
+    def plus_point(self, screen, new_x, new_y):
+        self.labyrinth.map[new_y][new_x] = 5
+        self.score += 10
+        center = new_x * TILE_SIZE + TILE_SIZE // 2, \
+                 new_y * TILE_SIZE + TILE_SIZE // 2
+        pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
 
 
 class Dots:
@@ -127,6 +149,11 @@ class Dots:
                     center = j * TILE_SIZE + TILE_SIZE // 2, \
                              i * TILE_SIZE + TILE_SIZE // 2
                     pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 5)
+
+
+class Bonus:
+    def __init__(self, score):
+        self.score = score
 
 
 if __name__ == '__main__':
