@@ -3,7 +3,7 @@ import pygame
 
 TILE_SIZE = 18
 START_POSITION = (1, 1)
-FREE_TILES = [1]
+FREE_TILES = [1, 5]
 
 
 def main():
@@ -45,7 +45,8 @@ class Labyrinth:
     def make(self, screen):
         # цвета для  каждого символа в лабиринте
         # 0 - стена,
-        # 1 - можно ходить(по белому),
+        # 1 - можно ходить(по белому), де есть точки,
+        # 5 - можно ходить, но точек нет,
         # 9 - место за полем,
         # 2 - могут ходить только приведения
         colors = {0: (0, 0, 120), 1: (255, 255, 255),
@@ -103,6 +104,7 @@ class PacmanMoves:
         # проверка : свободна ли клетка
         if self.labyrinth.tile_is_free((new_x, new_y)):
             self.pacman.set_position((new_x, new_y))
+
 
 
 if __name__ == '__main__':
