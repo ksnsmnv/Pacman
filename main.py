@@ -1,21 +1,22 @@
 import pygame
+import random
 
-
-TILE_SIZE = 18
-START_POSITION = (1, 1)
+TILE_SIZE = 20
 FREE_TILES = [1, 5]
 
 
 def main():
     pygame.init()
-    size = 800, 600
+    size = 800, 800
     screen = pygame.display.set_mode(size)
     # создание экзепляра лабиринта (из текствого файла в матрицу)
     labyrinth = Labyrinth()
     # создание экземпляра пакмана
-    pacman = Pacman(START_POSITION)
+    pacman = Pacman(labyrinth)
     # создание экземпляра PacmanMoves, который задает движение пакмана
     pacman_moves = PacmanMoves(labyrinth, pacman)
+    # создание экземпляра точек
+    dots = Dots()
     clock = pygame.time.Clock()
     running = True
     while running:
@@ -27,6 +28,7 @@ def main():
         # создание самого лабиринта (из матрицы в виджет pygame)
         labyrinth.make(screen)
         pacman.make(screen)
+        dots.make_dots(screen, labyrinth)
         pygame.display.flip()
         clock.tick(15)
     pygame.quit()
@@ -65,8 +67,8 @@ class Labyrinth:
 
 
 class Pacman:
-    def __init__(self, position):
-        self.x, self.y = position
+    def __init__(self, labyrinth):
+        self.x, self.y = self.start_position(labyrinth)
 
     def set_position(self, position):
         self.x, self.y = position
@@ -79,6 +81,14 @@ class Pacman:
         center = self.x * TILE_SIZE + TILE_SIZE // 2, \
                 self.y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 2)
+
+    def start_position(self, labyrinth):
+        x = random.randint(0, 27)
+        y = random.randint(0, 27)
+        while labyrinth.get_tile_id((x, y)) not in FREE_TILES:
+            x = random.randint(0, 27)
+            y = random.randint(0, 27)
+        return x, y
 
 
 class PacmanMoves:
@@ -105,6 +115,18 @@ class PacmanMoves:
         if self.labyrinth.tile_is_free((new_x, new_y)):
             self.pacman.set_position((new_x, new_y))
 
+
+class Dots:
+    def __init__(self):
+        pass
+
+    def make_dots(self, screen, labyrinth):
+        for i in range(len(labyrinth.map)):
+            for j in range(len(labyrinth.map[0])):
+                if labyrinth.map[i][j] == 1:
+                    center = j * TILE_SIZE + TILE_SIZE // 2, \
+                             i * TILE_SIZE + TILE_SIZE // 2
+                    pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 5)
 
 
 if __name__ == '__main__':
