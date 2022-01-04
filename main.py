@@ -49,7 +49,7 @@ class Labyrinth:
         # 9 - место за полем,
         # 2 - могут ходить только приведения
         colors = {0: (0, 0, 120), 1: (255, 255, 255),
-                  9: (0, 0, 0), 2: (0, 100, 0)}
+                  9: (0, 0, 0), 2: (0, 100, 0), 5: (255, 255, 255)}
         for y in range(self.height):
             for x in range(self.width):
                 rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE,
@@ -66,7 +66,6 @@ class Labyrinth:
 class Pacman:
     def __init__(self, position):
         self.x, self.y = position
-        print(self.x, self.y)
 
     def set_position(self, position):
         self.x, self.y = position
@@ -87,15 +86,21 @@ class PacmanMoves:
         self.pacman = pacman
 
     def change_pos(self):
+        # зменение позиции пакмана
         new_x, new_y = self.pacman.get_position()
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
+        if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
+            new_x += 27
+        elif pygame.key.get_pressed()[pygame.K_LEFT]:
             new_x -= 1
-        if pygame.key.get_pressed()[pygame.K_RIGHT]:
+        if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
+            new_x -= 27
+        elif pygame.key.get_pressed()[pygame.K_RIGHT]:
             new_x += 1
         if pygame.key.get_pressed()[pygame.K_UP]:
             new_y -= 1
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             new_y += 1
+        # проверка : свободна ли клетка
         if self.labyrinth.tile_is_free((new_x, new_y)):
             self.pacman.set_position((new_x, new_y))
 
