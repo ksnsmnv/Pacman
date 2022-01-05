@@ -3,6 +3,7 @@ import random
 
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
+ENEMY_EVENT = 30
 
 
 def main():
@@ -15,6 +16,7 @@ def main():
     labyrinth = Labyrinth()
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
+    enemy = Enemy(labyrinth)
     # создание экземпляра PacmanMoves, который задает движение пакмана
     pacman_moves = PacmanMoves(labyrinth, pacman, score)
     # создание экземпляра точек
@@ -33,6 +35,7 @@ def main():
         labyrinth.make(screen)
         pacman.make(screen)
         dots.make_dots(screen, labyrinth)
+        enemy.make(screen)
         pygame.display.flip()
         clock.tick(15)
     pygame.quit()
@@ -69,6 +72,28 @@ class Labyrinth:
     def tile_is_free(self, position):
         return self.get_tile_id(position) in FREE_TILES
 
+    def enemy_move(self, first_pos, second_pos):
+        INFINITY = 1000
+        x, y = first_pos
+        distance = [[INFINITY] * self.width for i in range(self.height)]
+        distance[x][y] = 0
+        past = [[INFINITY] * self.width for i in range(self.height)]
+        q = [(x, y)]
+        while q:
+            x, y = q.pop(0)
+            for dx, dy in (1, 0), (0, 1), (-1, 0), (0, -1):
+                next_x, next_y = x + dx, y + dy
+                if 0 <= next_x < self.width and 0 < next_y < self.height and self.tile_is_free((next_x, next_y)) and \
+                        distance[next_y][next_x] == INFINITY:
+                    distance[next_y][next_x] = distance[y][x] + 1
+                    past[next_y][next_x] = (x, y)
+                    q.append((next_x, next_y))
+        x, y = second_pos
+        if distance[y][x] == INFINITY or first_pos == second_pos:
+            return first_pos
+        while past[y][x] != first_pos:
+            x, y = past[y][x]
+        return x, y
 
 class Pacman:
     def __init__(self, labyrinth):
@@ -93,6 +118,25 @@ class Pacman:
             x = random.randint(0, 27)
             y = random.randint(0, 27)
         return x, y
+
+
+class Enemy:
+    def __init__(self, labyrinth):
+        self.x, self.y = [13, 5]
+        self.delay = 100
+        pygame.time.set_timer(ENEMY_EVENT, self.delay)
+
+    def set_position(self, position):
+        self.x, self.y = position
+
+    def get_position(self):
+        return self.x, self.y
+
+    def make(self, screen):
+        # создание пакмана в виде шарика
+        center = self.x * TILE_SIZE + TILE_SIZE // 2, \
+                self.y * TILE_SIZE + TILE_SIZE // 2
+        pygame.draw.circle(screen, (255, 0, 0), center, TILE_SIZE // 2)
 
 
 class PacmanMoves:
