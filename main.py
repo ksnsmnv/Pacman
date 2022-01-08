@@ -8,7 +8,7 @@ ENEMY_EVENT = 30
 
 def main():
     pygame.init()
-    size = 800, 800
+    size = 560, 600
     screen = pygame.display.set_mode(size)
     # счет игрока на начало игры
     score = 0
@@ -23,12 +23,15 @@ def main():
     dots = Dots()
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
+    enemy_move = EnemyMoves()
     clock = pygame.time.Clock()
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == ENEMY_EVENT:
+                enemy_move.move()
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
         # создание самого лабиринта (из матрицы в виджет pygame)
@@ -72,12 +75,12 @@ class Labyrinth:
     def tile_is_free(self, position):
         return self.get_tile_id(position) in FREE_TILES
 
-    def enemy_move(self, first_pos, second_pos):
+    def steps(self, first_pos, second_pos):
         INFINITY = 1000
         x, y = first_pos
         distance = [[INFINITY] * self.width for i in range(self.height)]
-        distance[x][y] = 0
-        past = [[INFINITY] * self.width for i in range(self.height)]
+        distance[y][x] = 0
+        past = [[None] * self.width for i in range(self.height)]
         q = [(x, y)]
         while q:
             x, y = q.pop(0)
@@ -94,6 +97,7 @@ class Labyrinth:
         while past[y][x] != first_pos:
             x, y = past[y][x]
         return x, y
+
 
 class Pacman:
     def __init__(self, labyrinth):
@@ -122,7 +126,7 @@ class Pacman:
 
 class Enemy:
     def __init__(self, labyrinth):
-        self.x, self.y = [13, 5]
+        self.x, self.y = Pacman(labyrinth).start_position(labyrinth)
         self.delay = 100
         pygame.time.set_timer(ENEMY_EVENT, self.delay)
 
@@ -133,10 +137,18 @@ class Enemy:
         return self.x, self.y
 
     def make(self, screen):
-        # создание пакмана в виде шарика
         center = self.x * TILE_SIZE + TILE_SIZE // 2, \
                 self.y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (255, 0, 0), center, TILE_SIZE // 2)
+
+
+class EnemyMoves:
+    def __init__(self):
+        self.labyrinth = Labyrinth()
+
+    def move(self):
+        next_position = Labyrinth().steps(Enemy(self.labyrinth).get_position(), Pacman(self.labyrinth).get_position())
+        Enemy(self.labyrinth).set_position(next_position)
 
 
 class PacmanMoves:
