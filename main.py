@@ -2,7 +2,7 @@ import pygame
 
 
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 480, 480
-FPS = 15
+FPS = 13
 MAPS_DIR = "maps"
 TILE_SIZE = 32
 ENEMY_EVENT_TYPE = 30
@@ -76,7 +76,7 @@ class Hero:
 class Enemy:
     def __init__(self, position):
         self.x, self.y = position
-        self.delay = 100
+        self.delay = 200
         pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
 
     def get_position(self):
