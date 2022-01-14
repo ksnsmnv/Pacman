@@ -70,9 +70,11 @@ class Labyrinth:
     def get_tile_id(self, position):
         return self.map[position[1]][position[0]]
 
+    # свободна ли клетка для пакмна
     def tile_is_free(self, position):
         return self.get_tile_id(position) in FREE_TILES
 
+    # свободна ли клетка для приведений
     def tile_is_free_for_enemy(self, position):
         return self.get_tile_id(position) in FREE_TILES_FOR_ENEMY
 
@@ -205,12 +207,17 @@ class Dots:
         pass
 
     def make_dots(self, screen, labyrinth):
+        self.ammount_of_dots = 0
         for i in range(len(labyrinth.map)):
             for j in range(len(labyrinth.map[0])):
                 if labyrinth.map[i][j] == 1:
                     center = j * TILE_SIZE + TILE_SIZE // 2, \
                              i * TILE_SIZE + TILE_SIZE // 2
                     pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 5)
+                    self.ammount_of_dots += 1
+
+    def get_dots(self):
+        return self.ammount_of_dots
 
 
 class Bonus:
