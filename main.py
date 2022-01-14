@@ -4,7 +4,7 @@ import random
 
 WINDOW_SIZE = WINDOW_WIDTH, WINDOW_HEIGHT = 600, 600
 FPS = 15
-TILE_SIZE = 16
+TILE_SIZE = 20
 ENEMY_EVENT_TYPE = 30
 FREE_TILES = [1, 5]
 
@@ -12,7 +12,7 @@ FREE_TILES = [1, 5]
 class Labyrinth:
     def __init__(self, filename):
         self.map = []
-        with open(f"maps/{filename}") as input_file:
+        with open("maps/{}".format(filename)) as input_file:
             for line in input_file:
                 self.map.append(list(map(int, line.split())))
         self.height = len(self.map)
@@ -130,8 +130,8 @@ class Moves:
 
 
 class Dots:
-    def __init__(self, screen, labyrinth):
-        self.make_dots(screen, labyrinth)
+    def __init__(self):
+        pass
 
     def make_dots(self, screen, labyrinth):
         for i in range(len(labyrinth.map)):
@@ -148,7 +148,7 @@ def main():
     labyrinth = Labyrinth('simple_map.txt')
     hero = Hero(labyrinth)
     enemy = Enemy((1, 1))
-    dots = Dots(screen, labyrinth)
+    dots = Dots()
     moves = Moves(labyrinth, hero, enemy)
     click = pygame.time.Clock()
     running = True
@@ -160,6 +160,7 @@ def main():
                 moves.move_enemy()
         moves.update_hero()
         screen.fill((0, 0, 0))
+        dots.make_dots(screen, labyrinth)
         moves.make(screen)
         pygame.display.flip()
         click.tick(FPS)
