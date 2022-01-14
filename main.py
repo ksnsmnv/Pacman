@@ -3,7 +3,7 @@ import random
 
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
-ENEMY_EVENT = 30
+ENEMY_EVENT_TYPE = 30
 
 
 def main():
@@ -17,10 +17,11 @@ def main():
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
     enemy = Enemy(labyrinth)
-    # создание экземпляра PacmanMoves, который задает движение пакмана
-    pacman_moves = PacmanMoves(labyrinth, pacman, score)
     # создание экземпляра точек
     dots = Dots()
+    enemy = Enemy((1, 1))
+    # создание экземпляра PacmanMoves, который задает движение пакмана
+    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy)
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
     enemy_move = EnemyMoves()
@@ -30,15 +31,13 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == ENEMY_EVENT:
-                enemy_move.move()
+            elif event.type == ENEMY_EVENT_TYPE:
+                pacman_moves.move_enemy()
+        # перемещение пакмана
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
         # создание самого лабиринта (из матрицы в виджет pygame)
-        labyrinth.make(screen)
-        pacman.make(screen)
-        dots.make_dots(screen, labyrinth)
-        enemy.make(screen)
+        pacman_moves.make()
         pygame.display.flip()
         clock.tick(15)
     pygame.quit()
@@ -75,26 +74,26 @@ class Labyrinth:
     def tile_is_free(self, position):
         return self.get_tile_id(position) in FREE_TILES
 
-    def steps(self, first_pos, second_pos):
-        INFINITY = 1000
-        x, y = first_pos
-        distance = [[INFINITY] * self.width for i in range(self.height)]
+    def find_path_step(self, start, target):
+        lasted = 1000
+        x, y = start
+        distance = [[lasted] * self.width for _ in range(self.height)]
         distance[y][x] = 0
-        past = [[None] * self.width for i in range(self.height)]
-        q = [(x, y)]
-        while q:
-            x, y = q.pop(0)
+        past = [[None] * self.width for _ in range(self.height)]
+        queue = [(x, y)]
+        while queue:
+            x, y = queue.pop(0)
             for dx, dy in (1, 0), (0, 1), (-1, 0), (0, -1):
                 next_x, next_y = x + dx, y + dy
-                if 0 <= next_x < self.width and 0 < next_y < self.height and self.tile_is_free((next_x, next_y)) and \
-                        distance[next_y][next_x] == INFINITY:
+                if 0 <= next_x < self.width and 0 < next_y < self.height and \
+                        self.tile_is_free((next_x, next_y)) and distance[next_y][next_x] == lasted:
                     distance[next_y][next_x] = distance[y][x] + 1
                     past[next_y][next_x] = (x, y)
-                    q.append((next_x, next_y))
-        x, y = second_pos
-        if distance[y][x] == INFINITY or first_pos == second_pos:
-            return first_pos
-        while past[y][x] != first_pos:
+                    queue.append((next_x, next_y))
+        x, y = target
+        if distance[y][x] == lasted or start == target:
+            return start
+        while past[y][x] != start:
             x, y = past[y][x]
         return x, y
 
@@ -111,8 +110,7 @@ class Pacman:
 
     def make(self, screen):
         # создание пакмана в виде шарика
-        center = self.x * TILE_SIZE + TILE_SIZE // 2, \
-                self.y * TILE_SIZE + TILE_SIZE // 2
+        center = self.x * TILE_SIZE + TILE_SIZE // 2, self.y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 2)
 
     def start_position(self, labyrinth):
@@ -125,37 +123,36 @@ class Pacman:
 
 
 class Enemy:
-    def __init__(self, labyrinth):
-        self.x, self.y = Pacman(labyrinth).start_position(labyrinth)
-        self.delay = 100
-        pygame.time.set_timer(ENEMY_EVENT, self.delay)
+    def __init__(self, position):
+        self.x, self.y = position
+        self.delay = 200
+        pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
+        
+    def get_position(self):
+        return self.x, self.y
 
     def set_position(self, position):
         self.x, self.y = position
 
-    def get_position(self):
-        return self.x, self.y
-
     def make(self, screen):
-        center = self.x * TILE_SIZE + TILE_SIZE // 2, \
-                self.y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, (255, 0, 0), center, TILE_SIZE // 2)
-
-
-class EnemyMoves:
-    def __init__(self):
-        self.labyrinth = Labyrinth()
-
-    def move(self):
-        next_position = Labyrinth().steps(Enemy(self.labyrinth).get_position(), Pacman(self.labyrinth).get_position())
-        Enemy(self.labyrinth).set_position(next_position)
+        center = self.x * TILE_SIZE + TILE_SIZE // 2, self.y * TILE_SIZE + TILE_SIZE // 2
+        pygame.draw.circle(screen, (255, 120, 120), center, TILE_SIZE // 2)
 
 
 class PacmanMoves:
-    def __init__(self, labyrinth, pacman, score):
+    def __init__(self, screen, labyrinth, pacman, score, dots, enemy):
+        self.screen = screen
         self.labyrinth = labyrinth
         self.pacman = pacman
         self.score = score
+        self.dots = dots
+        self.enemy = enemy
+
+    def make(self):
+        self.labyrinth.make(self.screen)
+        self.pacman.make(self.screen)
+        self.dots.make_dots(self.screen, self.labyrinth)
+        self.enemy.make(self.screen)
 
     def change_pos(self, screen):
         # зменение позиции пакмана
@@ -189,9 +186,13 @@ class PacmanMoves:
     def plus_point(self, screen, new_x, new_y):
         self.labyrinth.map[new_y][new_x] = 5
         self.score += 10
-        center = new_x * TILE_SIZE + TILE_SIZE // 2, \
-                 new_y * TILE_SIZE + TILE_SIZE // 2
+        center = new_x * TILE_SIZE + TILE_SIZE // 2, new_y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
+
+    def move_enemy(self):
+        next_position = self.labyrinth.find_path_step(self.enemy.get_position(),
+                                                      self.pacman.get_position())
+        self.enemy.set_position(next_position)
 
 
 class Dots:
