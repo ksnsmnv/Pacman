@@ -16,7 +16,7 @@ def main():
     labyrinth = Labyrinth()
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
-    enemy = Enemy(labyrinth)
+    enemy = Enemy((1, 1))
     # создание экземпляра точек
     dots = Dots()
     enemy = Enemy((1, 1))
@@ -24,7 +24,6 @@ def main():
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy)
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
-    enemy_move = EnemyMoves()
     clock = pygame.time.Clock()
     running = True
     while running:
