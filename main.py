@@ -8,7 +8,7 @@ ENEMY_EVENT_TYPE = 30
 
 def main():
     pygame.init()
-    size = 600, 600
+    size = 560, 600
     screen = pygame.display.set_mode(size)
     # счет игрока на начало игры
     score = 0
@@ -16,6 +16,7 @@ def main():
     labyrinth = Labyrinth()
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
+    enemy = Enemy(labyrinth)
     # создание экземпляра точек
     dots = Dots()
     enemy = Enemy((1, 1))
@@ -23,6 +24,7 @@ def main():
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy)
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
+    enemy_move = EnemyMoves()
     clock = pygame.time.Clock()
     running = True
     while running:
@@ -125,7 +127,7 @@ class Enemy:
         self.x, self.y = position
         self.delay = 200
         pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
-
+        
     def get_position(self):
         return self.x, self.y
 
