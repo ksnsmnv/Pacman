@@ -3,6 +3,7 @@ import random
 
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
+FREE_TILES_FOR_ENEMY = [1, 2, 5]
 ENEMY_EVENT_TYPE = 30
 
 
@@ -16,10 +17,9 @@ def main():
     labyrinth = Labyrinth()
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
-    enemy = Enemy((1, 1))
     # создание экземпляра точек
     dots = Dots()
-    enemy = Enemy((1, 1))
+    enemy = Enemy()
     # создание экземпляра PacmanMoves, который задает движение пакмана
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy)
     # создание экземпляра точки-бонуса
@@ -73,6 +73,9 @@ class Labyrinth:
     def tile_is_free(self, position):
         return self.get_tile_id(position) in FREE_TILES
 
+    def tile_is_free_for_enemy(self, position):
+        return self.get_tile_id(position) in FREE_TILES_FOR_ENEMY
+
     def find_path_step(self, start, target):
         lasted = 1000
         x, y = start
@@ -85,7 +88,7 @@ class Labyrinth:
             for dx, dy in (1, 0), (0, 1), (-1, 0), (0, -1):
                 next_x, next_y = x + dx, y + dy
                 if 0 <= next_x < self.width and 0 < next_y < self.height and \
-                        self.tile_is_free((next_x, next_y)) and distance[next_y][next_x] == lasted:
+                        self.tile_is_free_for_enemy((next_x, next_y)) and distance[next_y][next_x] == lasted:
                     distance[next_y][next_x] = distance[y][x] + 1
                     past[next_y][next_x] = (x, y)
                     queue.append((next_x, next_y))
@@ -122,10 +125,13 @@ class Pacman:
 
 
 class Enemy:
-    def __init__(self, position):
-        self.x, self.y = position
+    def __init__(self):
+        self.x, self.y = self.start_position()
         self.delay = 200
         pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
+
+    def start_position(self):
+        return 11, 14
         
     def get_position(self):
         return self.x, self.y
