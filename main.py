@@ -7,6 +7,7 @@ FPS = 15
 TILE_SIZE = 20
 ENEMY_EVENT_TYPE = 30
 FREE_TILES = [1, 5]
+SCORE = 0
 
 
 class Labyrinth:
@@ -39,7 +40,7 @@ class Labyrinth:
     def get_tile_id(self, position):
         return self.map[position[1]][position[0]]
 
-    def is_free(self, position):
+    def tile_is_free(self, position):
         return self.get_tile_id(position) in self.free_tiles
 
     def find_path_step(self, start, target):
@@ -54,7 +55,7 @@ class Labyrinth:
             for dx, dy in (1, 0), (0, 1), (-1, 0), (0, -1):
                 next_x, next_y = x + dx, y + dy
                 if 0 <= next_x < self.width and 0 < next_y < self.height and \
-                        self.is_free((next_x, next_y)) and distance[next_y][next_x] == lasted:
+                        self.tile_is_free((next_x, next_y)) and distance[next_y][next_x] == lasted:
                     distance[next_y][next_x] = distance[y][x] + 1
                     past[next_y][next_x] = (x, y)
                     queue.append((next_x, next_y))
@@ -66,7 +67,7 @@ class Labyrinth:
         return x, y
 
 
-class Hero:
+class Pacman:
     def __init__(self, labyrinth):
         self.x, self.y = self.start_position(labyrinth)
 
@@ -107,56 +108,79 @@ class Enemy:
 
 
 class Moves:
-    def __init__(self, labyrinth, hero, enemy):
+    def __init__(self, labyrinth, pacman, enemy):
+        self.score = SCORE
         self.labyrinth = labyrinth
-        self.hero = hero
+        self.pacman = pacman
         self.enemy = enemy
 
     def make(self, screen):
         self.labyrinth.make(screen)
-        self.hero.make(screen)
+        self.pacman.make(screen)
         self.enemy.make(screen)
 
-    def update_hero(self):
-        nx, ny = self.hero.get_position()
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
-            nx -= 1
+    def update_hero(self, screen):
+        # зменение позиции пакмана
+        new_x, new_y = self.pacman.get_position()
+        if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
+            new_x += 27
+        elif pygame.key.get_pressed()[pygame.K_LEFT]:
+            new_x -= 1
+            # если эта точка имеет "точку", выполняется функция "plus_point"
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
+        if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
+            new_x -= 27
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            nx += 1
-        elif pygame.key.get_pressed()[pygame.K_UP]:
-            ny -= 1
-        elif pygame.key.get_pressed()[pygame.K_DOWN]:
-            ny += 1
-        if self.labyrinth.is_free((nx, ny)):
-            self.hero.set_position((nx, ny))
+            new_x += 1
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
+        if pygame.key.get_pressed()[pygame.K_UP]:
+            new_y -= 1
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
+        if pygame.key.get_pressed()[pygame.K_DOWN]:
+            new_y += 1
+            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
+                self.plus_point(screen, new_x, new_y)
+        # проверка : свободна ли клетка
+        if self.labyrinth.tile_is_free((new_x, new_y)):
+            self.pacman.set_position((new_x, new_y))
+
+    # прибавляется 10 очков к "score" и стирается точка
+    def plus_point(self, screen, new_x, new_y):
+        self.labyrinth.map[new_y][new_x] = 5
+        self.score += 10
+        center = new_x * TILE_SIZE + TILE_SIZE // 2, new_y * TILE_SIZE + TILE_SIZE // 2
+        pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
 
     def move_enemy(self):
         next_position = self.labyrinth.find_path_step(self.enemy.get_position(),
-                                                      self.hero.get_position())
+                                                      self.pacman.get_position())
         self.enemy.set_position(next_position)
 
 
 class Dots:
-    def __init__(self):
-        pass
+    def __init__(self, screen, labyrinth):
+        self.screen = screen
+        self.labyrinth = labyrinth
 
-    def make_dots(self, screen, labyrinth):
-        for i in range(len(labyrinth.map)):
-            for j in range(len(labyrinth.map[0])):
-                if labyrinth.map[i][j] == 1:
-                    center = j * TILE_SIZE + TILE_SIZE // 2, \
-                             i * TILE_SIZE + TILE_SIZE // 2
-                    pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 5)
+    def make_dots(self):
+        for i in range(len(self.labyrinth.map)):
+            for j in range(len(self.labyrinth.map[0])):
+                if self.labyrinth.map[i][j] == 1:
+                    center = j * TILE_SIZE + TILE_SIZE // 2, i * TILE_SIZE + TILE_SIZE // 2
+                    pygame.draw.circle(self.screen, (232, 167, 2), center, TILE_SIZE // 5)
 
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode(WINDOW_SIZE)
     labyrinth = Labyrinth('simple_map.txt')
-    hero = Hero(labyrinth)
+    pacman = Pacman(labyrinth)
     enemy = Enemy((1, 1))
-    dots = Dots()
-    moves = Moves(labyrinth, hero, enemy)
+    dots = Dots(screen, labyrinth)
+    moves = Moves(labyrinth, pacman, enemy)
     click = pygame.time.Clock()
     running = True
     while running:
@@ -165,8 +189,8 @@ def main():
                 running = False
             elif event.type == ENEMY_EVENT_TYPE:
                 moves.move_enemy()
-        moves.update_hero()
-        dots.make_dots(screen, labyrinth)
+        moves.update_hero(screen)
+        dots.make_dots()
         moves.make(screen)
         pygame.display.flip()
         click.tick(FPS)
