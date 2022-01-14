@@ -7,7 +7,7 @@ FREE_TILES = [1, 5]
 
 def main():
     pygame.init()
-    size = 800, 800
+    size = 600, 600
     screen = pygame.display.set_mode(size)
     # счет игрока на начало игры
     score = 0
@@ -15,10 +15,10 @@ def main():
     labyrinth = Labyrinth()
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
-    # создание экземпляра PacmanMoves, который задает движение пакмана
-    pacman_moves = PacmanMoves(labyrinth, pacman, score)
     # создание экземпляра точек
     dots = Dots()
+    # создание экземпляра PacmanMoves, который задает движение пакмана
+    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots)
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
     clock = pygame.time.Clock()
@@ -27,12 +27,11 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+        # перемещение пакмана
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
         # создание самого лабиринта (из матрицы в виджет pygame)
-        labyrinth.make(screen)
-        pacman.make(screen)
-        dots.make_dots(screen, labyrinth)
+        pacman_moves.make()
         pygame.display.flip()
         clock.tick(15)
     pygame.quit()
@@ -96,10 +95,17 @@ class Pacman:
 
 
 class PacmanMoves:
-    def __init__(self, labyrinth, pacman, score):
+    def __init__(self, screen, labyrinth, pacman, score, dots):
+        self.screen = screen
         self.labyrinth = labyrinth
         self.pacman = pacman
         self.score = score
+        self.dots = dots
+
+    def make(self):
+        self.labyrinth.make(self.screen)
+        self.pacman.make(self.screen)
+        self.dots.make_dots(self.screen, self.labyrinth)
 
     def change_pos(self, screen):
         # зменение позиции пакмана
