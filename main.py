@@ -12,8 +12,9 @@ FREE_TILES = [1, 5]
 class Labyrinth:
     def __init__(self, filename):
         self.map = []
-        with open("maps/{}".format(filename)) as input_file:
-            for line in input_file:
+        with open("maps/{}".format(filename)) as text_lab:
+            for line in text_lab:
+                # создание матрицы либиринта
                 self.map.append(list(map(int, line.split())))
         self.height = len(self.map)
         self.width = len(self.map[0])
@@ -21,6 +22,12 @@ class Labyrinth:
         self.free_tiles = FREE_TILES
 
     def make(self, screen):
+        # цвета для  каждого символа в лабиринте
+        # 0 - стена,
+        # 1 - можно ходить(по белому), де есть точки,
+        # 5 - можно ходить, но точек нет,
+        # 9 - место за полем,
+        # 2 - могут ходить только приведения
         colors = {0: (0, 0, 120), 1: (255, 255, 255),
                   9: (0, 0, 0), 2: (0, 100, 0), 5: (255, 255, 255)}
         for y in range(self.height):
@@ -40,7 +47,7 @@ class Labyrinth:
         x, y = start
         distance = [[lasted] * self.width for _ in range(self.height)]
         distance[y][x] = 0
-        prev = [[None] * self.width for _ in range(self.height)]
+        past = [[None] * self.width for _ in range(self.height)]
         queue = [(x, y)]
         while queue:
             x, y = queue.pop(0)
@@ -49,13 +56,13 @@ class Labyrinth:
                 if 0 <= next_x < self.width and 0 < next_y < self.height and \
                         self.is_free((next_x, next_y)) and distance[next_y][next_x] == lasted:
                     distance[next_y][next_x] = distance[y][x] + 1
-                    prev[next_y][next_x] = (x, y)
+                    past[next_y][next_x] = (x, y)
                     queue.append((next_x, next_y))
         x, y = target
         if distance[y][x] == lasted or start == target:
             return start
-        while prev[y][x] != start:
-            x, y = prev[y][x]
+        while past[y][x] != start:
+            x, y = past[y][x]
         return x, y
 
 
@@ -159,7 +166,6 @@ def main():
             elif event.type == ENEMY_EVENT_TYPE:
                 moves.move_enemy()
         moves.update_hero()
-        screen.fill((0, 0, 0))
         dots.make_dots(screen, labyrinth)
         moves.make(screen)
         pygame.display.flip()
