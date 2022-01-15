@@ -4,7 +4,7 @@ import random
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
 FREE_TILES_FOR_ENEMY = [1, 2, 5]
-ENEMY_EVENT = 30
+ENEMY_EVENT = 20
 
 
 def main():
@@ -22,9 +22,10 @@ def main():
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
     # создание экземпляра приведения
-    enemy = Enemy()
+    red_enemy = Enemy((252, 44, 0), 1)
+    pink_enemy = Enemy((253, 192, 179), 2)
     # создание экземпляра PacmanMoves, который задает движение пакмана
-    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy, bonus)
+    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, bonus)
     clock = pygame.time.Clock()
     game_over = False
     running = True
@@ -136,13 +137,18 @@ class Pacman:
 
 
 class Enemy:
-    def __init__(self):
+    def __init__(self, color, number):
+        self.number = number
         self.x, self.y = self.start_position()
         self.delay = 200
         pygame.time.set_timer(ENEMY_EVENT, self.delay)
+        self.color = color
 
     def start_position(self):
-        return 11, 14
+        if self.number == 1:
+            return 11, 14
+        elif self.number == 2:
+            return 16, 14
         
     def get_position(self):
         return self.x, self.y
@@ -152,24 +158,26 @@ class Enemy:
 
     def make(self, screen):
         center = self.x * TILE_SIZE + TILE_SIZE // 2, 25 + self.y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, (255, 120, 120), center, TILE_SIZE // 2)
+        pygame.draw.circle(screen, self.color, center, TILE_SIZE // 2)
 
 
 class PacmanMoves:
-    def __init__(self, screen, labyrinth, pacman, score, dots, enemy, bonus):
+    def __init__(self, screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, bonus):
+        self.enemy1 = red_enemy
+        self.enemy2 = pink_enemy
         self.screen = screen
         self.labyrinth = labyrinth
         self.pacman = pacman
         self.score = score
         self.dots = dots
-        self.enemy = enemy
         self.bonus = bonus
 
     def make(self):
         self.labyrinth.make(self.screen)
         self.pacman.make(self.screen)
         self.dots.make_dots(self.screen, self.labyrinth)
-        self.enemy.make(self.screen)
+        self.enemy1.make(self.screen)
+        self.enemy2.make(self.screen)
         self.bonus.make(self.screen, self.labyrinth)
 
     # зменение позиции пакмана
@@ -222,16 +230,35 @@ class PacmanMoves:
         pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
 
     def move_enemy(self):
-        next_position = self.labyrinth.find_path_step(self.enemy.get_position(),
+        next_position = self.labyrinth.find_path_step(self.enemy1.get_position(),
                                                       self.pacman.get_position())
-        self.enemy.set_position(next_position)
+        self.enemy1.set_position(next_position)
+
+    def move_pink_enemy(self):
+        position = self.pacman.get_position()
+        if self.labyrinth.tile_is_free_for_enemy(position[0] + 4, position[1]):
+            next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
+                                                              (position[0] + 4, position[1]))
+            self.enemy2.set_position(next_position)
+        elif self.labyrinth.tile_is_free_for_enemy(position[0], position[1] + 4):
+            next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
+                                                              (position[0], position[1] + 4))
+            self.enemy2.set_position(next_position)
+        elif self.labyrinth.tile_is_free_for_enemy(position[0], position[1] - 4):
+            next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
+                                                              (position[0], position[1] - 4))
+            self.enemy2.set_position(next_position)
+        elif self.labyrinth.tile_is_free_for_enemy(position[0] - 4, position[1]):
+            next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
+                                                              (position[0] - 4, position[1]))
+            self.enemy2.set_position(next_position)
 
     def won(self):
         if self.labyrinth.maximum_score == 0:
             return True
 
     def lost(self):
-        return self.pacman.get_position() == self.enemy.get_position()
+        return self.pacman.get_position() == self.enemy1.get_position()
 
 
 class Dots:
