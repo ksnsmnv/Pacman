@@ -19,11 +19,12 @@ def main():
     pacman = Pacman(labyrinth)
     # создание экземпляра точек
     dots = Dots()
+    # создание экземпляра точки-бонуса
+    bonus = Bonus(score)
+    # создание экземпляра приведения
     enemy = Enemy()
     # создание экземпляра PacmanMoves, который задает движение пакмана
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy)
-    # создание экземпляра точки-бонуса
-    bonus = Bonus(score)
     clock = pygame.time.Clock()
     running = True
     while running:
@@ -35,7 +36,7 @@ def main():
         # перемещение пакмана
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
-        # создание самого лабиринта (из матрицы в виджет pygame)
+        # создание изображений элементов игры
         pacman_moves.make()
         pygame.display.flip()
         clock.tick(15)
@@ -78,26 +79,26 @@ class Labyrinth:
     def tile_is_free_for_enemy(self, position):
         return self.get_tile_id(position) in FREE_TILES_FOR_ENEMY
 
-    def find_path_step(self, start, target):
+    def find_path_step(self, first_pos, second_pos):
         lasted = 1000
-        x, y = start
+        x, y = first_pos
         distance = [[lasted] * self.width for _ in range(self.height)]
         distance[y][x] = 0
         past = [[None] * self.width for _ in range(self.height)]
-        queue = [(x, y)]
-        while queue:
-            x, y = queue.pop(0)
+        q = [(x, y)]
+        while q:
+            x, y = q.pop(0)
             for dx, dy in (1, 0), (0, 1), (-1, 0), (0, -1):
                 next_x, next_y = x + dx, y + dy
                 if 0 <= next_x < self.width and 0 < next_y < self.height and \
                         self.tile_is_free_for_enemy((next_x, next_y)) and distance[next_y][next_x] == lasted:
                     distance[next_y][next_x] = distance[y][x] + 1
                     past[next_y][next_x] = (x, y)
-                    queue.append((next_x, next_y))
-        x, y = target
-        if distance[y][x] == lasted or start == target:
-            return start
-        while past[y][x] != start:
+                    q.append((next_x, next_y))
+        x, y = second_pos
+        if distance[y][x] == lasted or first_pos == second_pos:
+            return first_pos
+        while past[y][x] != first_pos:
             x, y = past[y][x]
         return x, y
 
@@ -161,8 +162,8 @@ class PacmanMoves:
         self.dots.make_dots(self.screen, self.labyrinth)
         self.enemy.make(self.screen)
 
+    # зменение позиции пакмана
     def change_pos(self, screen):
-        # зменение позиции пакмана
         new_x, new_y = self.pacman.get_position()
         if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
             new_x += 27
@@ -207,17 +208,17 @@ class Dots:
         pass
 
     def make_dots(self, screen, labyrinth):
-        self.ammount_of_dots = 0
+        self.amount_of_dots = 0
         for i in range(len(labyrinth.map)):
             for j in range(len(labyrinth.map[0])):
                 if labyrinth.map[i][j] == 1:
                     center = j * TILE_SIZE + TILE_SIZE // 2, \
                              i * TILE_SIZE + TILE_SIZE // 2
                     pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 5)
-                    self.ammount_of_dots += 1
+                    self.amount_of_dots += 1
 
     def get_dots(self):
-        return self.ammount_of_dots
+        return self.amount_of_dots
 
 
 class Bonus:
