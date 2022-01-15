@@ -4,12 +4,12 @@ import random
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
 FREE_TILES_FOR_ENEMY = [1, 2, 5]
-ENEMY_EVENT_TYPE = 30
+ENEMY_EVENT = 30
 
 
 def main():
     pygame.init()
-    size = 560, 600
+    size = 560, 660
     screen = pygame.display.set_mode(size)
     # счет игрока на начало игры
     score = 0
@@ -24,20 +24,23 @@ def main():
     # создание экземпляра приведения
     enemy = Enemy()
     # создание экземпляра PacmanMoves, который задает движение пакмана
-    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy)
+    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, enemy, bonus)
     clock = pygame.time.Clock()
+    game_over = False
     running = True
-    while running:
+    while running and not game_over:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == ENEMY_EVENT_TYPE:
+            elif event.type == ENEMY_EVENT:
                 pacman_moves.move_enemy()
         # перемещение пакмана
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
         # создание изображений элементов игры
         pacman_moves.make()
+        if pacman_moves.won() or pacman_moves.lost():
+            game_over = True
         pygame.display.flip()
         clock.tick(15)
     pygame.quit()
@@ -54,17 +57,22 @@ class Labyrinth:
         self.width = len(self.map[0])
 
     def make(self, screen):
+        self.maximum_score = 0
         # цвета для  каждого символа в лабиринте
         # 0 - стена,
         # 1 - можно ходить(по белому), де есть точки,
         # 5 - можно ходить, но точек нет,
         # 9 - место за полем,
         # 2 - могут ходить только приведения
-        colors = {0: (0, 0, 120), 1: (255, 255, 255),
-                  9: (0, 0, 0), 2: (0, 100, 0), 5: (255, 255, 255)}
+        colors = {0: (0, 0, 120), 1: (255, 255, 255), 3: (255, 255, 255),
+                  9: (0, 0, 0), 2: (130, 130, 120), 5: (255, 255, 255)}
         for y in range(self.height):
             for x in range(self.width):
-                rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE,
+                if self.get_tile_id((x, y)) == 1:
+                    self.maximum_score += 10
+                elif self.get_tile_id((x, y)) == 3:
+                    self.maximum_score += 50
+                rect = pygame.Rect(x * TILE_SIZE, 25 + y * TILE_SIZE,
                                    TILE_SIZE, TILE_SIZE)
                 screen.fill(colors[self.get_tile_id((x, y))], rect)
 
@@ -115,7 +123,7 @@ class Pacman:
 
     def make(self, screen):
         # создание пакмана в виде шарика
-        center = self.x * TILE_SIZE + TILE_SIZE // 2, self.y * TILE_SIZE + TILE_SIZE // 2
+        center = self.x * TILE_SIZE + TILE_SIZE // 2, 25 + self.y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 2)
 
     def start_position(self, labyrinth):
@@ -131,7 +139,7 @@ class Enemy:
     def __init__(self):
         self.x, self.y = self.start_position()
         self.delay = 200
-        pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
+        pygame.time.set_timer(ENEMY_EVENT, self.delay)
 
     def start_position(self):
         return 11, 14
@@ -143,24 +151,26 @@ class Enemy:
         self.x, self.y = position
 
     def make(self, screen):
-        center = self.x * TILE_SIZE + TILE_SIZE // 2, self.y * TILE_SIZE + TILE_SIZE // 2
+        center = self.x * TILE_SIZE + TILE_SIZE // 2, 25 + self.y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (255, 120, 120), center, TILE_SIZE // 2)
 
 
 class PacmanMoves:
-    def __init__(self, screen, labyrinth, pacman, score, dots, enemy):
+    def __init__(self, screen, labyrinth, pacman, score, dots, enemy, bonus):
         self.screen = screen
         self.labyrinth = labyrinth
         self.pacman = pacman
         self.score = score
         self.dots = dots
         self.enemy = enemy
+        self.bonus = bonus
 
     def make(self):
         self.labyrinth.make(self.screen)
         self.pacman.make(self.screen)
         self.dots.make_dots(self.screen, self.labyrinth)
         self.enemy.make(self.screen)
+        self.bonus.make(self.screen, self.labyrinth)
 
     # зменение позиции пакмана
     def change_pos(self, screen):
@@ -172,20 +182,28 @@ class PacmanMoves:
             # если эта точка имеет "точку", выполняется функция "plus_point"
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
+            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
+                self.plus_bonus(screen, new_x, new_y)
         if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
             new_x -= 27
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
             new_x += 1
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
+            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
+                self.plus_bonus(screen, new_x, new_y)
         if pygame.key.get_pressed()[pygame.K_UP]:
             new_y -= 1
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
+            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
+                self.plus_bonus(screen, new_x, new_y)
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             new_y += 1
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
+            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
+                self.plus_bonus(screen, new_x, new_y)
         # проверка : свободна ли клетка
         if self.labyrinth.tile_is_free((new_x, new_y)):
             self.pacman.set_position((new_x, new_y))
@@ -194,7 +212,13 @@ class PacmanMoves:
     def plus_point(self, screen, new_x, new_y):
         self.labyrinth.map[new_y][new_x] = 5
         self.score += 10
-        center = new_x * TILE_SIZE + TILE_SIZE // 2, new_y * TILE_SIZE + TILE_SIZE // 2
+        center = new_x * TILE_SIZE + TILE_SIZE // 2, 25 + new_y * TILE_SIZE + TILE_SIZE // 2
+        pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
+
+    def plus_bonus(self, screen, new_x, new_y):
+        self.labyrinth.map[new_y][new_x] = 5
+        self.score += 50
+        center = new_x * TILE_SIZE + TILE_SIZE // 2, 25 + new_y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
 
     def move_enemy(self):
@@ -202,28 +226,41 @@ class PacmanMoves:
                                                       self.pacman.get_position())
         self.enemy.set_position(next_position)
 
+    def won(self):
+        if self.labyrinth.maximum_score == 0:
+            return True
+
+    def lost(self):
+        return self.pacman.get_position() == self.enemy.get_position()
+
 
 class Dots:
     def __init__(self):
         pass
 
     def make_dots(self, screen, labyrinth):
-        self.amount_of_dots = 0
         for i in range(len(labyrinth.map)):
             for j in range(len(labyrinth.map[0])):
                 if labyrinth.map[i][j] == 1:
-                    center = j * TILE_SIZE + TILE_SIZE // 2, \
-                             i * TILE_SIZE + TILE_SIZE // 2
-                    pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 5)
-                    self.amount_of_dots += 1
-
-    def get_dots(self):
-        return self.amount_of_dots
+                    center = j * TILE_SIZE + TILE_SIZE // 2, 25 + i * TILE_SIZE + TILE_SIZE // 2
+                    pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 6)
 
 
 class Bonus:
     def __init__(self, score):
         self.score = score
+
+    def make(self, screen, labyrinth):
+        self.all_bonus = 0
+        for i in range(len(labyrinth.map)):
+            for j in range(len(labyrinth.map[0])):
+                if labyrinth.map[i][j] == 3:
+                    center = j * TILE_SIZE + TILE_SIZE // 2, 25 + i * TILE_SIZE + TILE_SIZE // 2
+                    pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 3)
+                    self.all_bonus += 1
+
+    def get_bonus(self):
+        return self.all_bonus * 50
 
 
 if __name__ == '__main__':
