@@ -35,6 +35,7 @@ def main():
                 running = False
             elif event.type == ENEMY_EVENT:
                 pacman_moves.move_enemy()
+                pacman_moves.move_pink_enemy()
         # перемещение пакмана
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
@@ -180,7 +181,7 @@ class PacmanMoves:
         self.enemy2.make(self.screen)
         self.bonus.make(self.screen, self.labyrinth)
 
-    # зменение позиции пакмана
+    # изменение позиции пакмана
     def change_pos(self, screen):
         new_x, new_y = self.pacman.get_position()
         if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
@@ -236,21 +237,13 @@ class PacmanMoves:
 
     def move_pink_enemy(self):
         position = self.pacman.get_position()
-        if self.labyrinth.tile_is_free_for_enemy(position[0] + 4, position[1]):
+        if self.labyrinth.tile_is_free_for_enemy((position[0], position[1] - 4)):
             next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
-                                                              (position[0] + 4, position[1]))
+                                                          (position[0], position[1] - 4))
             self.enemy2.set_position(next_position)
-        elif self.labyrinth.tile_is_free_for_enemy(position[0], position[1] + 4):
+        elif self.labyrinth.tile_is_free_for_enemy((position[0] - 4, position[1])):
             next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
-                                                              (position[0], position[1] + 4))
-            self.enemy2.set_position(next_position)
-        elif self.labyrinth.tile_is_free_for_enemy(position[0], position[1] - 4):
-            next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
-                                                              (position[0], position[1] - 4))
-            self.enemy2.set_position(next_position)
-        elif self.labyrinth.tile_is_free_for_enemy(position[0] - 4, position[1]):
-            next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
-                                                              (position[0] - 4, position[1]))
+                                                          (position[0] - 4, position[1]))
             self.enemy2.set_position(next_position)
 
     def won(self):
