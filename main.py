@@ -24,7 +24,7 @@ def main():
     # создание экземпляра приведения
     red_enemy = Enemy((252, 44, 0), 1)
     pink_enemy = Enemy((253, 192, 179), 2)
-    orange_enemy = Enemy((255, 165, 0), 3)
+    orange_enemy = Enemy((255, 140, 0), 3)
     # создание экземпляра PacmanMoves, который задает движение пакмана
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus)
     clock = pygame.time.Clock()
@@ -37,13 +37,13 @@ def main():
             elif event.type == ENEMY_EVENT:
                 pacman_moves.move_red_enemy()
                 pacman_moves.move_pink_enemy()
-                # pacman_moves.move_orange_enemy()
+                pacman_moves.move_orange_enemy()
         # перемещение пакмана
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
         # создание изображений элементов игры
         pacman_moves.make()
-        if pacman_moves.won() or pacman_moves.lost(1) or pacman_moves.lost(2):
+        if pacman_moves.won() or pacman_moves.lost(1) or pacman_moves.lost(2) or pacman_moves.lost(3):
             game_over = True
         pygame.display.flip()
         clock.tick(10)
@@ -255,14 +255,10 @@ class PacmanMoves:
     def move_orange_enemy(self):
         position = self.pacman.get_position()
         position2 = self.enemy3.get_position()
-        if (position2[0] - position[0] <= 8 and position2[1] - position[1] <= 8) or \
-            (position2[0] - position[0] >= -8 and position2[1] - position[1] <= 8) or \
-            (position2[0] - position[0] <= 8 and position2[1] - position[1] >= -8) or \
-            (position2[0] - position[0] <= -8 and position2[1] - position[1] >= -8):
+        if abs(position2[0] - position[0]) <= 8 and abs(position2[1] - position[1]) <= 8:
             next_position = self.labyrinth.find_path_step(self.enemy3.get_position(),
                                                           self.pacman.get_position())
             self.enemy3.set_position(next_position)
-
     def won(self):
         if self.labyrinth.maximum_score == 0:
             return True
@@ -271,6 +267,8 @@ class PacmanMoves:
         if number_of_ghost == 1:
             return self.pacman.get_position() == self.enemy1.get_position()
         if number_of_ghost == 2:
+            return self.pacman.get_position() == self.enemy2.get_position()
+        if number_of_ghost == 3:
             return self.pacman.get_position() == self.enemy2.get_position()
 
 
