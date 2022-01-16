@@ -9,7 +9,7 @@ ENEMY_EVENT = 20
 
 def main():
     pygame.init()
-    size = 560, 660
+    size = 560, 630
     screen = pygame.display.set_mode(size)
     # счет игрока на начало игры
     score = 0
@@ -35,8 +35,10 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == ENEMY_EVENT:
-                pacman_moves.move_red_enemy()
-                pacman_moves.move_pink_enemy()
+                if pacman_moves.flag2():
+                    pacman_moves.move_red_enemy()
+                if pacman_moves.flag():
+                    pacman_moves.move_pink_enemy()
                 pacman_moves.move_orange_enemy()
         # перемещение пакмана
         pacman_moves.change_pos(screen)
@@ -177,6 +179,7 @@ class PacmanMoves:
         self.score = score
         self.dots = dots
         self.bonus = bonus
+        self.points = 0
 
     def make(self):
         self.labyrinth.make(self.screen)
@@ -197,6 +200,7 @@ class PacmanMoves:
             # если эта точка имеет "точку", выполняется функция "plus_point"
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
+                self.points += 1
             elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
                 self.plus_bonus(screen, new_x, new_y)
         if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
@@ -255,10 +259,28 @@ class PacmanMoves:
     def move_orange_enemy(self):
         position = self.pacman.get_position()
         position2 = self.enemy3.get_position()
-        if abs(position2[0] - position[0]) <= 8 and abs(position2[1] - position[1]) <= 8:
-            next_position = self.labyrinth.find_path_step(self.enemy3.get_position(),
-                                                          self.pacman.get_position())
+        if abs(position2[0] - position[0]) <= 12 and abs(position2[1] - position[1]) <= 12:
+            next_position = self.labyrinth.find_path_step(position2,
+                                                          position)
             self.enemy3.set_position(next_position)
+        else:
+            step_x = random.randint(0, 27)
+            step_y = random.randint(0, 28)
+            while not self.labyrinth.tile_is_free_for_enemy((step_x, step_y)):
+                step_x = random.randint(0, 27)
+                step_y = random.randint(0, 28)
+            next_position = self.labyrinth.find_path_step(position2,
+                                                          (step_x, step_y))
+            self.enemy3.set_position(next_position)
+
+    def flag(self):
+        if self.points >= 15:
+            return True
+
+    def flag2(self):
+        if self.points >= 30:
+            return True
+
     def won(self):
         if self.labyrinth.maximum_score == 0:
             return True
@@ -269,7 +291,7 @@ class PacmanMoves:
         if number_of_ghost == 2:
             return self.pacman.get_position() == self.enemy2.get_position()
         if number_of_ghost == 3:
-            return self.pacman.get_position() == self.enemy2.get_position()
+            return self.pacman.get_position() == self.enemy3.get_position()
 
 
 class Dots:
