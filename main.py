@@ -24,8 +24,9 @@ def main():
     # создание экземпляра приведения
     red_enemy = Enemy((252, 44, 0), 1)
     pink_enemy = Enemy((253, 192, 179), 2)
+    orange_enemy = Enemy((255, 165, 0), 3)
     # создание экземпляра PacmanMoves, который задает движение пакмана
-    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, bonus)
+    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus)
     clock = pygame.time.Clock()
     game_over = False
     running = True
@@ -34,17 +35,18 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == ENEMY_EVENT:
-                pacman_moves.move_enemy()
+                pacman_moves.move_red_enemy()
                 pacman_moves.move_pink_enemy()
+                # pacman_moves.move_orange_enemy()
         # перемещение пакмана
         pacman_moves.change_pos(screen)
         screen.fill((0, 0, 0))
         # создание изображений элементов игры
         pacman_moves.make()
-        if pacman_moves.won() or pacman_moves.lost():
+        if pacman_moves.won() or pacman_moves.lost(1) or pacman_moves.lost(2):
             game_over = True
         pygame.display.flip()
-        clock.tick(15)
+        clock.tick(10)
     pygame.quit()
 
 
@@ -150,6 +152,8 @@ class Enemy:
             return 11, 14
         elif self.number == 2:
             return 16, 14
+        elif self.number == 3:
+            return 11, 13
         
     def get_position(self):
         return self.x, self.y
@@ -163,9 +167,10 @@ class Enemy:
 
 
 class PacmanMoves:
-    def __init__(self, screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, bonus):
+    def __init__(self, screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus):
         self.enemy1 = red_enemy
         self.enemy2 = pink_enemy
+        self.enemy3 = orange_enemy
         self.screen = screen
         self.labyrinth = labyrinth
         self.pacman = pacman
@@ -179,6 +184,7 @@ class PacmanMoves:
         self.dots.make_dots(self.screen, self.labyrinth)
         self.enemy1.make(self.screen)
         self.enemy2.make(self.screen)
+        self.enemy3.make(self.screen)
         self.bonus.make(self.screen, self.labyrinth)
 
     # изменение позиции пакмана
@@ -230,7 +236,7 @@ class PacmanMoves:
         center = new_x * TILE_SIZE + TILE_SIZE // 2, 25 + new_y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
 
-    def move_enemy(self):
+    def move_red_enemy(self):
         next_position = self.labyrinth.find_path_step(self.enemy1.get_position(),
                                                       self.pacman.get_position())
         self.enemy1.set_position(next_position)
@@ -246,12 +252,26 @@ class PacmanMoves:
                                                           (position[0] - 4, position[1]))
             self.enemy2.set_position(next_position)
 
+    def move_orange_enemy(self):
+        position = self.pacman.get_position()
+        position2 = self.enemy3.get_position()
+        if (position2[0] - position[0] <= 8 and position2[1] - position[1] <= 8) or \
+            (position2[0] - position[0] >= -8 and position2[1] - position[1] <= 8) or \
+            (position2[0] - position[0] <= 8 and position2[1] - position[1] >= -8) or \
+            (position2[0] - position[0] <= -8 and position2[1] - position[1] >= -8):
+            next_position = self.labyrinth.find_path_step(self.enemy3.get_position(),
+                                                          self.pacman.get_position())
+            self.enemy3.set_position(next_position)
+
     def won(self):
         if self.labyrinth.maximum_score == 0:
             return True
 
-    def lost(self):
-        return self.pacman.get_position() == self.enemy1.get_position()
+    def lost(self, number_of_ghost):
+        if number_of_ghost == 1:
+            return self.pacman.get_position() == self.enemy1.get_position()
+        if number_of_ghost == 2:
+            return self.pacman.get_position() == self.enemy2.get_position()
 
 
 class Dots:
