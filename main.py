@@ -1,10 +1,67 @@
 import pygame
 import random
 
+WIDTH, HEIGHT = 560, 630
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
 FREE_TILES_FOR_ENEMY = [1, 2, 5]
 ENEMY_EVENT = 20
+DISPLAY = pygame.display.set_mode((WIDTH, HEIGHT))
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (200, 0, 0)
+GREEN = (0, 200, 0)
+BRIGHT_RED = (255, 0, 0)
+BRIGHT_GREEN = (0, 255, 0)
+pygame.font.init()
+
+
+# оздание текстового объекта
+def text_objects(text, font):
+    text_surface = font.render(text, True, BLACK)
+    return text_surface, text_surface.get_rect()
+
+
+# создание конпки с функционалом
+def button(msg, x, y, w, h, ic, ac, action=''):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+
+    if x + w > mouse[0] > x and y + h > mouse[1] > y:
+        pygame.draw.rect(DISPLAY, ac, (x, y, w, h))
+        if click[0] == 1 and action:
+            if action == 'play':
+                main()
+            elif action == 'quit':
+                pygame.quit()
+                quit()
+    else:
+        pygame.draw.rect(DISPLAY, ic, (x, y, w, h))
+
+    small_text = pygame.font.Font(None, 20)
+    text_surf, text_rect = text_objects(msg, small_text)
+    text_rect.center = ((x + (w / 2)), y + (h / 2))
+    DISPLAY.blit(text_surf, text_rect)
+
+
+# создание экрана меню
+def game_intro():
+    intro = True
+    while intro:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        DISPLAY.fill((255, 255, 255))
+        large_text = pygame.font.Font(None, 115)
+        text_surf, text_rect = text_objects("Menu", large_text)
+        text_rect.center = ((WIDTH / 2), (HEIGHT / 2))
+        DISPLAY.blit(text_surf, text_rect)
+
+        button("GO!", 150, 450, 100, 50, GREEN, BRIGHT_GREEN, 'play')
+        button("Quit", 350, 450, 100, 50, RED, BRIGHT_RED, 'quit')
+        pygame.display.update()
+        pygame.time.Clock().tick(15)
 
 
 def main():
@@ -14,7 +71,7 @@ def main():
     # счет игрока на начало игры
     score = 0
     # создание экзепляра лабиринта (из текствого файла в матрицу)
-    labyrinth = Labyrinth()
+    labyrinth = Labyrinth('pacman_light_labyrinth.txt')
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
     # создание экземпляра точек
@@ -34,6 +91,7 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                game_intro()
             elif event.type == ENEMY_EVENT:
                 if pacman_moves.flag2():
                     pacman_moves.move_red_enemy()
@@ -47,15 +105,16 @@ def main():
         pacman_moves.make()
         if pacman_moves.won() or pacman_moves.lost(1) or pacman_moves.lost(2) or pacman_moves.lost(3):
             game_over = True
+            game_intro()
         pygame.display.flip()
         clock.tick(10)
     pygame.quit()
 
 
 class Labyrinth:
-    def __init__(self):
+    def __init__(self, file_name):
         self.map = []
-        with open("pacman_light_labyrinth.txt") as text_lab:
+        with open(file_name) as text_lab:
             for line in text_lab:
                 # создание матрицы либиринта
                 self.map.append(list(map(int, line.split())))
@@ -324,4 +383,4 @@ class Bonus:
 
 
 if __name__ == '__main__':
-    main()
+    game_intro()
