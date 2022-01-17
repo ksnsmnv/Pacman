@@ -1,24 +1,26 @@
 import pygame
 import random
 
-WIDTH, HEIGHT = 560, 630
+WIDTH, HEIGHT = 560, 650
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
 FREE_TILES_FOR_ENEMY = [1, 2, 5]
 ENEMY_EVENT = 20
 DISPLAY = pygame.display.set_mode((WIDTH, HEIGHT))
+YELLOW = (245, 208, 51)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (200, 0, 0)
 GREEN = (0, 200, 0)
 BRIGHT_RED = (255, 0, 0)
 BRIGHT_GREEN = (0, 255, 0)
+DARK_BLUE = (0, 0, 80)
 pygame.font.init()
 
 
 # оздание текстового объекта
-def text_objects(text, font):
-    text_surface = font.render(text, True, BLACK)
+def text_objects(text, font, color=WHITE):
+    text_surface = font.render(text, True, color)
     return text_surface, text_surface.get_rect()
 
 
@@ -30,7 +32,17 @@ def button(msg, x, y, w, h, ic, ac, action=''):
     if x + w > mouse[0] > x and y + h > mouse[1] > y:
         pygame.draw.rect(DISPLAY, ac, (x, y, w, h))
         if click[0] == 1 and action:
-            if action == 'play':
+            if action == 'level1_1':
+                main((560, 650), 'pacman_light_labyrinth.txt', 350)
+            if action == 'level2_1':
+                main((560, 650), 'pacman_light_labyrinth.txt', 250)
+            if action == 'level3_1':
+                main((560, 650), 'pacman_light_labyrinth.txt', 200)
+            if action == 'level1_2':
+                main()
+            if action == 'level2_2':
+                main()
+            if action == 'level3_2':
                 main()
             elif action == 'quit':
                 pygame.quit()
@@ -52,26 +64,34 @@ def game_intro():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        DISPLAY.fill((255, 255, 255))
+        DISPLAY.fill(DARK_BLUE)
         large_text = pygame.font.Font(None, 115)
-        text_surf, text_rect = text_objects("PAC-MAN", large_text)
+        text_surf, text_rect = text_objects("PAC-MAN", large_text, YELLOW)
         text_rect.center = ((WIDTH / 2), (HEIGHT / 4))
         DISPLAY.blit(text_surf, text_rect)
 
-        button("GO!", 150, 450, 100, 50, GREEN, BRIGHT_GREEN, 'play')
-        button("Quit", 350, 450, 100, 50, RED, BRIGHT_RED, 'quit')
+        button("Labyrinth 1:", WIDTH / 6, 230, 100, 50, DARK_BLUE, DARK_BLUE)
+        button("Level 1", WIDTH / 6, 300, 100, 50, DARK_BLUE, BLACK, 'level1_1')
+        button("Level 2", WIDTH / 6, 375, 100, 50, DARK_BLUE, BLACK, 'level2_1')
+        button("Level 3", WIDTH / 6, 450, 100, 50, DARK_BLUE, BLACK, 'level3_1')
+
+        button("Labyrinth 2:", WIDTH / 6 * 3.7, 230, 100, 50, DARK_BLUE, DARK_BLUE)
+        button("Level 1", WIDTH / 6 * 3.7, 300, 100, 50, DARK_BLUE, BLACK, 'level1_2')
+        button("Level 2", WIDTH / 6 * 3.7, 375, 100, 50, DARK_BLUE, BLACK, 'level2_2')
+        button("Level 3", WIDTH / 6 * 3.7, 450, 100, 50, DARK_BLUE, BLACK, 'level3_2')
+
+        button("Quit", 220, 520, 100, 50, DARK_BLUE, BLACK, 'quit')
         pygame.display.update()
         pygame.time.Clock().tick(15)
 
 
-def main():
+def main(size, file_name, speed):
     pygame.init()
-    size = 560, 630
     screen = pygame.display.set_mode(size)
     # счет игрока на начало игры
     score = 0
     # создание экзепляра лабиринта (из текствого файла в матрицу)
-    labyrinth = Labyrinth('pacman_light_labyrinth.txt')
+    labyrinth = Labyrinth(file_name)
     # создание экземпляра пакмана
     pacman = Pacman(labyrinth)
     # создание экземпляра точек
@@ -79,9 +99,9 @@ def main():
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
     # создание экземпляра приведения
-    red_enemy = Enemy((252, 44, 0), 1)
-    pink_enemy = Enemy((253, 192, 179), 2)
-    orange_enemy = Enemy((255, 140, 0), 3)
+    red_enemy = Enemy((252, 44, 0), 1, speed)
+    pink_enemy = Enemy((253, 192, 179), 2, speed)
+    orange_enemy = Enemy((255, 140, 0), 3, speed)
     # создание экземпляра PacmanMoves, который задает движение пакмана
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus)
     clock = pygame.time.Clock()
@@ -201,10 +221,10 @@ class Pacman:
 
 
 class Enemy:
-    def __init__(self, color, number):
+    def __init__(self, color, number, speed):
         self.x, self.y = self.start_position(number)
-        self.delay = 200
-        pygame.time.set_timer(ENEMY_EVENT, self.delay)
+        self.speed = speed
+        pygame.time.set_timer(ENEMY_EVENT, self.speed)
         self.color = color
 
     def start_position(self, number):
