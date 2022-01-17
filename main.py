@@ -39,11 +39,11 @@ def button(msg, x, y, w, h, ic, ac, action=''):
             if action == 'level3_1':
                 main((560, 650), 'pacman_light_labyrinth.txt', 200)
             if action == 'level1_2':
-                main()
+                main((560, 650), 'pacman_labyrinth.txt', 350)
             if action == 'level2_2':
-                main()
+                main((560, 650), 'pacman_labyrinth.txt', 250)
             if action == 'level3_2':
-                main()
+                main((560, 650), 'pacman_labyrinth.txt', 200)
             elif action == 'quit':
                 pygame.quit()
                 quit()
@@ -198,6 +198,7 @@ class Labyrinth:
 
 class Pacman:
     def __init__(self, labyrinth):
+        self.labyrinth = labyrinth
         self.x, self.y = self.start_position(labyrinth)
 
     def set_position(self, position):
@@ -212,11 +213,11 @@ class Pacman:
         pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 2)
 
     def start_position(self, labyrinth):
-        x = random.randint(0, 27)
-        y = random.randint(0, 27)
+        x = random.randint(0, self.labyrinth.width)
+        y = random.randint(0, self.labyrinth.height)
         while labyrinth.get_tile_id((x, y)) not in FREE_TILES:
-            x = random.randint(0, 27)
-            y = random.randint(0, 27)
+            x = random.randint(0, self.labyrinth.width)
+            y = random.randint(0, self.labyrinth.height)
         return x, y
 
 
@@ -229,11 +230,11 @@ class Enemy:
 
     def start_position(self, number):
         if number == 1:
-            return 11, 14
+            return 1, 1
         elif number == 2:
-            return 16, 14
+            return 2, 1
         elif number == 3:
-            return 11, 13
+            return 3, 1
         
     def get_position(self):
         return self.x, self.y
