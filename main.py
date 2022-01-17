@@ -54,8 +54,8 @@ def game_intro():
                 quit()
         DISPLAY.fill((255, 255, 255))
         large_text = pygame.font.Font(None, 115)
-        text_surf, text_rect = text_objects("Menu", large_text)
-        text_rect.center = ((WIDTH / 2), (HEIGHT / 2))
+        text_surf, text_rect = text_objects("PAC-MAN", large_text)
+        text_rect.center = ((WIDTH / 2), (HEIGHT / 4))
         DISPLAY.blit(text_surf, text_rect)
 
         button("GO!", 150, 450, 100, 50, GREEN, BRIGHT_GREEN, 'play')
@@ -202,18 +202,17 @@ class Pacman:
 
 class Enemy:
     def __init__(self, color, number):
-        self.number = number
-        self.x, self.y = self.start_position()
+        self.x, self.y = self.start_position(number)
         self.delay = 200
         pygame.time.set_timer(ENEMY_EVENT, self.delay)
         self.color = color
 
-    def start_position(self):
-        if self.number == 1:
+    def start_position(self, number):
+        if number == 1:
             return 11, 14
-        elif self.number == 2:
+        elif number == 2:
             return 16, 14
-        elif self.number == 3:
+        elif number == 3:
             return 11, 13
         
     def get_position(self):
