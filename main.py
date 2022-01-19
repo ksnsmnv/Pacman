@@ -39,11 +39,11 @@ def button(msg, x, y, w, h, ic, ac, action=''):
             if action == 'level3_1':
                 main((560, 650), 'pacman_light_labyrinth.txt', 200)
             if action == 'level1_2':
-                main((560, 650), 'pacman_labyrinth.txt', 350)
+                main((560, 650), 'pacman_labyrinth.txt', 300)
             if action == 'level2_2':
-                main((560, 650), 'pacman_labyrinth.txt', 250)
-            if action == 'level3_2':
                 main((560, 650), 'pacman_labyrinth.txt', 200)
+            if action == 'level3_2':
+                main((560, 650), 'pacman_labyrinth.txt', 150)
             elif action == 'quit':
                 pygame.quit()
                 quit()
@@ -98,15 +98,17 @@ def main(size, file_name, speed):
     dots = Dots()
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
-    # создание экземпляра приведения
+    # создание экземпляров приведений
     red_enemy = Enemy((252, 44, 0), 1, speed)
     pink_enemy = Enemy((253, 192, 179), 2, speed)
     orange_enemy = Enemy((255, 140, 0), 3, speed)
-    # создание экземпляра PacmanMoves, который задает движение пакмана
+    # создание экземпляра PacmanMoves, который задает движение пакмана и приведений
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus)
+
     clock = pygame.time.Clock()
     game_over = False
     running = True
+
     while running and not game_over:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -123,6 +125,7 @@ def main(size, file_name, speed):
         screen.fill((0, 0, 0))
         # создание изображений элементов игры
         pacman_moves.make()
+        # проверка на то, выиграл или проиграл ли игрок
         if pacman_moves.won() or pacman_moves.lost(1) or pacman_moves.lost(2) or pacman_moves.lost(3):
             game_over = True
             game_intro()
@@ -147,6 +150,7 @@ class Labyrinth:
         # 0 - стена,
         # 1 - можно ходить(по белому), де есть точки,
         # 5 - можно ходить, но точек нет,
+        # 3 - места для бонусов,
         # 9 - место за полем,
         # 2 - могут ходить только приведения
         colors = {0: (0, 0, 120), 1: (255, 255, 255), 3: (255, 255, 255),
@@ -172,6 +176,7 @@ class Labyrinth:
     def tile_is_free_for_enemy(self, position):
         return self.get_tile_id(position) in FREE_TILES_FOR_ENEMY
 
+    # один шаг для приведения
     def find_path_step(self, first_pos, second_pos):
         lasted = 1000
         x, y = first_pos
@@ -189,6 +194,7 @@ class Labyrinth:
                     past[next_y][next_x] = (x, y)
                     q.append((next_x, next_y))
         x, y = second_pos
+        # проверка: был ли на этой клетке пакман или нет
         if distance[y][x] == lasted or first_pos == second_pos:
             return first_pos
         while past[y][x] != first_pos:
@@ -222,12 +228,15 @@ class Pacman:
 
 
 class Enemy:
+    # создание врага, скорость которого задается в меню пакмана
+    # чем выше уровень, тем выше скорость
     def __init__(self, color, number, speed):
         self.x, self.y = self.start_position(number)
         self.speed = speed
         pygame.time.set_timer(ENEMY_EVENT, self.speed)
         self.color = color
 
+    # начальная позиция пакмана
     def start_position(self, number):
         if number == 1:
             return 1, 1
@@ -249,6 +258,7 @@ class Enemy:
 
 class PacmanMoves:
     def __init__(self, screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus):
+        # инициализация частей программы, которые требуются для выполнения функций этого класса
         self.enemy1 = red_enemy
         self.enemy2 = pink_enemy
         self.enemy3 = orange_enemy
@@ -260,6 +270,7 @@ class PacmanMoves:
         self.bonus = bonus
         self.points = 0
 
+    # создание
     def make(self):
         self.labyrinth.make(self.screen)
         self.pacman.make(self.screen)
@@ -272,6 +283,8 @@ class PacmanMoves:
     # изменение позиции пакмана
     def change_pos(self, screen):
         new_x, new_y = self.pacman.get_position()
+        # --- проверка нажатия клавиш ---
+        # для левой клавиши
         if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
             new_x += 27
         elif pygame.key.get_pressed()[pygame.K_LEFT]:
@@ -282,6 +295,7 @@ class PacmanMoves:
                 self.points += 1
             elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
                 self.plus_bonus(screen, new_x, new_y)
+        # для правой клавиши
         if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
             new_x -= 27
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
@@ -290,12 +304,14 @@ class PacmanMoves:
                 self.plus_point(screen, new_x, new_y)
             elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
                 self.plus_bonus(screen, new_x, new_y)
+        # для верхней клавиши
         if pygame.key.get_pressed()[pygame.K_UP]:
             new_y -= 1
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
             elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
                 self.plus_bonus(screen, new_x, new_y)
+        # для нижней клавиши
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             new_y += 1
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
@@ -320,6 +336,7 @@ class PacmanMoves:
         pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
 
     def move_red_enemy(self):
+        # переход к функции find_path_step для получения следующей позиции
         next_position = self.labyrinth.find_path_step(self.enemy1.get_position(),
                                                       self.pacman.get_position())
         self.enemy1.set_position(next_position)
@@ -352,18 +369,22 @@ class PacmanMoves:
                                                           (step_x, step_y))
             self.enemy3.set_position(next_position)
 
+    # флаг для активации второго приведения
     def flag(self):
         if self.points >= 15:
             return True
 
+    # флаг для активации первого приведения
     def flag2(self):
         if self.points >= 30:
             return True
 
+    # проверка: закончились ли точки
     def won(self):
         if self.labyrinth.maximum_score == 0:
             return True
 
+    # проверка: столкнулся ли пакман с приведением
     def lost(self, number_of_ghost):
         if number_of_ghost == 1:
             return self.pacman.get_position() == self.enemy1.get_position()
