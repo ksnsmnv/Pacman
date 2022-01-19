@@ -1,7 +1,8 @@
 import pygame
 import random
 import time
-
+import os
+import sys
 
 WIDTH, HEIGHT = 560, 650
 TILE_SIZE = 20
@@ -273,6 +274,17 @@ class Enemy:
         pygame.time.set_timer(ENEMY_EVENT, self.speed)
         self.color = color
 
+        # передавание картинок приведений
+        if number == 1:
+            image = pygame.image.load('red1.jpg').convert_alpha()
+            self.new_image = pygame.transform.scale(image, (20, 20))
+        elif number == 2:
+            image = pygame.image.load('pink1.jpg').convert_alpha()
+            self.new_image = pygame.transform.scale(image, (20, 20))
+        elif number == 3:
+            image = pygame.image.load('orange1.jpg').convert_alpha()
+            self.new_image = pygame.transform.scale(image, (20, 20))
+
     # начальная позиция пакмана
     def start_position(self, number):
         if number == 1:
@@ -289,8 +301,8 @@ class Enemy:
         self.x, self.y = position
 
     def make(self, screen):
-        center = self.x * TILE_SIZE + TILE_SIZE // 2, 25 + self.y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, self.color, center, TILE_SIZE // 2)
+        center = self.x * TILE_SIZE, 25 + self.y * TILE_SIZE
+        screen.blit(self.new_image, center)
 
 
 class PacmanMoves:
@@ -307,7 +319,7 @@ class PacmanMoves:
         self.bonus = bonus
         self.points = 0
 
-    # создание сех частей лабиринта в одной функции
+    # создание всех частей лабиринта в одной функции
     def make(self):
         self.labyrinth.make(self.screen)
         self.pacman.make(self.screen)
