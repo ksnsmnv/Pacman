@@ -33,17 +33,17 @@ def button(msg, x, y, w, h, ic, ac, action=''):
         pygame.draw.rect(DISPLAY, ac, (x, y, w, h))
         if click[0] == 1 and action:
             if action == 'level1_1':
-                main((560, 650), 'pacman_light_labyrinth.txt', 350)
+                main((560, 650), 'pacman_light_labyrinth.txt', 350, (15, 30))
             if action == 'level2_1':
-                main((560, 650), 'pacman_light_labyrinth.txt', 250)
+                main((560, 650), 'pacman_light_labyrinth.txt', 250, (10, 25))
             if action == 'level3_1':
-                main((560, 650), 'pacman_light_labyrinth.txt', 200)
+                main((560, 650), 'pacman_light_labyrinth.txt', 200, (5, 20))
             if action == 'level1_2':
-                main((560, 650), 'pacman_labyrinth.txt', 300)
+                main((560, 650), 'pacman_labyrinth.txt', 350, (30, 45))
             if action == 'level2_2':
-                main((560, 650), 'pacman_labyrinth.txt', 200)
+                main((560, 650), 'pacman_labyrinth.txt', 250, (20, 35))
             if action == 'level3_2':
-                main((560, 650), 'pacman_labyrinth.txt', 150)
+                main((560, 650), 'pacman_labyrinth.txt', 200, (15, 30))
             elif action == 'quit':
                 pygame.quit()
                 quit()
@@ -85,7 +85,7 @@ def game_intro():
         pygame.time.Clock().tick(15)
 
 
-def main(size, file_name, speed):
+def main(size, file_name, speed, start):
     pygame.init()
     screen = pygame.display.set_mode(size)
     # счет игрока на начало игры
@@ -115,9 +115,9 @@ def main(size, file_name, speed):
                 running = False
                 game_intro()
             elif event.type == ENEMY_EVENT:
-                if pacman_moves.flag2():
+                if pacman_moves.flag2(start):
                     pacman_moves.move_red_enemy()
-                if pacman_moves.flag():
+                if pacman_moves.flag(start):
                     pacman_moves.move_pink_enemy()
                 pacman_moves.move_orange_enemy()
         # перемещение пакмана
@@ -270,7 +270,7 @@ class PacmanMoves:
         self.bonus = bonus
         self.points = 0
 
-    # создание
+    # создание сех частей лабиринта в одной функции
     def make(self):
         self.labyrinth.make(self.screen)
         self.pacman.make(self.screen)
@@ -370,13 +370,13 @@ class PacmanMoves:
             self.enemy3.set_position(next_position)
 
     # флаг для активации второго приведения
-    def flag(self):
-        if self.points >= 15:
+    def flag(self, start):
+        if self.points >= start[0]:
             return True
 
     # флаг для активации первого приведения
-    def flag2(self):
-        if self.points >= 30:
+    def flag2(self, start):
+        if self.points >= start[1]:
             return True
 
     # проверка: закончились ли точки
