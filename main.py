@@ -281,7 +281,7 @@ class Enemy:
             return 2, 1
         elif number == 3:
             return 3, 1
-        
+
     def get_position(self):
         return self.x, self.y
 
