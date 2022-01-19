@@ -1,12 +1,13 @@
 import pygame
 import random
+import time
 
 WIDTH, HEIGHT = 560, 650
 TILE_SIZE = 20
 FREE_TILES = [1, 5]
 FREE_TILES_FOR_ENEMY = [1, 2, 5]
 ENEMY_EVENT = 20
-DISPLAY = pygame.display.set_mode((WIDTH, HEIGHT))
+SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 YELLOW = (245, 208, 51)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -30,30 +31,40 @@ def button(msg, x, y, w, h, ic, ac, action=''):
     click = pygame.mouse.get_pressed()
 
     if x + w > mouse[0] > x and y + h > mouse[1] > y:
-        pygame.draw.rect(DISPLAY, ac, (x, y, w, h))
+        pygame.draw.rect(SCREEN, ac, (x, y, w, h))
         if click[0] == 1 and action:
             if action == 'level1_1':
-                main((560, 650), 'pacman_light_labyrinth.txt', 350)
+                main((560, 650), 'pacman_light_labyrinth.txt', 350, (15, 30))
             if action == 'level2_1':
-                main((560, 650), 'pacman_light_labyrinth.txt', 250)
+                main((560, 650), 'pacman_light_labyrinth.txt', 250, (10, 25))
             if action == 'level3_1':
-                main((560, 650), 'pacman_light_labyrinth.txt', 200)
+                main((560, 650), 'pacman_light_labyrinth.txt', 200, (5, 20))
             if action == 'level1_2':
-                main((560, 650), 'pacman_labyrinth.txt', 300)
+                main((560, 650), 'pacman_labyrinth.txt', 350, (30, 45))
             if action == 'level2_2':
-                main((560, 650), 'pacman_labyrinth.txt', 200)
+                main((560, 650), 'pacman_labyrinth.txt', 250, (20, 35))
             if action == 'level3_2':
-                main((560, 650), 'pacman_labyrinth.txt', 150)
+                main((560, 650), 'pacman_labyrinth.txt', 200, (15, 30))
             elif action == 'quit':
                 pygame.quit()
                 quit()
     else:
-        pygame.draw.rect(DISPLAY, ic, (x, y, w, h))
+        pygame.draw.rect(SCREEN, ic, (x, y, w, h))
 
     small_text = pygame.font.Font(None, 20)
     text_surf, text_rect = text_objects(msg, small_text)
     text_rect.center = ((x + (w / 2)), y + (h / 2))
-    DISPLAY.blit(text_surf, text_rect)
+    SCREEN.blit(text_surf, text_rect)
+
+
+def game_is_over_message(message):
+    coordinates = ((0, HEIGHT / 6), (WIDTH, HEIGHT * 3 / 5))
+    pygame.draw.rect(SCREEN, WHITE, coordinates)
+    text = pygame.font.Font(None, 115)
+    text_surf, text_rect = text_objects(message, text, DARK_BLUE)
+    text_rect.center = ((WIDTH / 2), (HEIGHT / 2))
+    SCREEN.blit(text_surf, text_rect)
+    pygame.display.update()
 
 
 # создание экрана меню
@@ -64,11 +75,11 @@ def game_intro():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        DISPLAY.fill(DARK_BLUE)
+        SCREEN.fill(DARK_BLUE)
         large_text = pygame.font.Font(None, 115)
         text_surf, text_rect = text_objects("PAC-MAN", large_text, YELLOW)
         text_rect.center = ((WIDTH / 2), (HEIGHT / 4))
-        DISPLAY.blit(text_surf, text_rect)
+        SCREEN.blit(text_surf, text_rect)
 
         button("Labyrinth 1:", WIDTH / 6, 230, 100, 50, DARK_BLUE, DARK_BLUE)
         button("Level 1", WIDTH / 6, 300, 100, 50, DARK_BLUE, BLACK, 'level1_1')
@@ -85,11 +96,16 @@ def game_intro():
         pygame.time.Clock().tick(15)
 
 
-def main(size, file_name, speed):
+def main(size, file_name, speed, start):
     pygame.init()
-    large_text = pygame.font.Font(None, 20)
-    text_surf, text_rect = text_objects("PAC-MAN", large_text, YELLOW)
     screen = pygame.display.set_mode(size)
+
+    # появление на экране счета игрока
+    large_text = pygame.font.Font(None, 24)
+    text_surf, text_rect = text_objects("Score:", large_text)
+    text_rect.center = ((TILE_SIZE * 5), (TILE_SIZE / 2))
+    screen.blit(text_surf, text_rect)
+
     # счет игрока на начало игры
     score = 0
     # создание экзепляра лабиринта (из текствого файла в матрицу)
@@ -109,28 +125,42 @@ def main(size, file_name, speed):
 
     clock = pygame.time.Clock()
     game_over = False
+    has_won = False
     running = True
 
-    while running and not game_over:
+    while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 game_intro()
             elif event.type == ENEMY_EVENT:
-                if pacman_moves.flag2():
+                if pacman_moves.flag2(start):
                     pacman_moves.move_red_enemy()
-                if pacman_moves.flag():
+                if pacman_moves.flag(start):
                     pacman_moves.move_pink_enemy()
                 pacman_moves.move_orange_enemy()
-        # перемещение пакмана
-        pacman_moves.change_pos(screen)
-        screen.fill((0, 0, 0))
+
+        # перемещение пакмана, если игра не закончена
+        if not game_over:
+            pacman_moves.change_pos(screen)
+        else:
+            if has_won and game_over:
+                game_is_over_message('You won')
+            elif game_over:
+                game_is_over_message('You lost')
+            time.sleep(3)
+            game_intro()
+        # вывод текущего счета на экран
+        pacman_moves.change_score(screen)
         # создание изображений элементов игры
         pacman_moves.make()
+
         # проверка на то, выиграл или проиграл ли игрок
-        if pacman_moves.won() or pacman_moves.lost(1) or pacman_moves.lost(2) or pacman_moves.lost(3):
+        if pacman_moves.won():
+            has_won = True
             game_over = True
-            game_intro()
+        elif pacman_moves.lost(1) or pacman_moves.lost(2) or pacman_moves.lost(3):
+            game_over = True
         pygame.display.flip()
         clock.tick(10)
     pygame.quit()
@@ -182,9 +212,13 @@ class Labyrinth:
     def find_path_step(self, first_pos, second_pos):
         lasted = 1000
         x, y = first_pos
-        distance = [[lasted] * self.width for _ in range(self.height)]
+        distance = []
+        for _ in range(self.height):
+            distance.append([lasted] * self.width)
         distance[y][x] = 0
-        past = [[None] * self.width for _ in range(self.height)]
+        past = []
+        for _ in range(self.height):
+            past.append([None] * self.width)
         q = [(x, y)]
         while q:
             x, y = q.pop(0)
@@ -221,11 +255,11 @@ class Pacman:
         pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 2)
 
     def start_position(self, labyrinth):
-        x = random.randint(0, self.labyrinth.width)
-        y = random.randint(0, self.labyrinth.height)
+        x = random.randint(1, self.labyrinth.width - 1)
+        y = random.randint(1, self.labyrinth.height - 1)
         while labyrinth.get_tile_id((x, y)) not in FREE_TILES:
-            x = random.randint(0, self.labyrinth.width)
-            y = random.randint(0, self.labyrinth.height)
+            x = random.randint(1, self.labyrinth.width - 1)
+            y = random.randint(1, self.labyrinth.height - 1)
         return x, y
 
 
@@ -272,7 +306,7 @@ class PacmanMoves:
         self.bonus = bonus
         self.points = 0
 
-    # создание
+    # создание сех частей лабиринта в одной функции
     def make(self):
         self.labyrinth.make(self.screen)
         self.pacman.make(self.screen)
@@ -344,6 +378,7 @@ class PacmanMoves:
         self.enemy1.set_position(next_position)
 
     def move_pink_enemy(self):
+        #
         position = self.pacman.get_position()
         if self.labyrinth.tile_is_free_for_enemy((position[0], position[1] - 4)):
             next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
@@ -355,6 +390,7 @@ class PacmanMoves:
             self.enemy2.set_position(next_position)
 
     def move_orange_enemy(self):
+        #
         position = self.pacman.get_position()
         position2 = self.enemy3.get_position()
         if abs(position2[0] - position[0]) <= 12 and abs(position2[1] - position[1]) <= 12:
@@ -372,13 +408,13 @@ class PacmanMoves:
             self.enemy3.set_position(next_position)
 
     # флаг для активации второго приведения
-    def flag(self):
-        if self.points >= 15:
+    def flag(self, start):
+        if self.points >= start[0]:
             return True
 
     # флаг для активации первого приведения
-    def flag2(self):
-        if self.points >= 30:
+    def flag2(self, start):
+        if self.points >= start[1]:
             return True
 
     # проверка: закончились ли точки
@@ -394,6 +430,18 @@ class PacmanMoves:
             return self.pacman.get_position() == self.enemy2.get_position()
         if number_of_ghost == 3:
             return self.pacman.get_position() == self.enemy3.get_position()
+
+    def change_score(self, screen):
+        large_text = pygame.font.Font(None, 24)
+        text_surf, text_rect = self.text_objects(str(self.score), large_text)
+        text_rect.center = ((TILE_SIZE * 9), (TILE_SIZE / 2))
+        coordinates = ((TILE_SIZE * 7, 0), (TILE_SIZE * 10, TILE_SIZE * 1.5))
+        pygame.draw.rect(screen, BLACK, coordinates)
+        screen.blit(text_surf, text_rect)
+
+    def text_objects(self, text, font, color=WHITE):
+        text_surface = font.render(text, True, color)
+        return text_surface, text_surface.get_rect()
 
 
 class Dots:
