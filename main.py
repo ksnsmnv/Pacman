@@ -1,8 +1,7 @@
 import pygame
 import random
 import time
-import os
-import sys
+
 
 WIDTH, HEIGHT = 560, 650
 TILE_SIZE = 20
@@ -13,11 +12,10 @@ SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 YELLOW = (245, 208, 51)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-RED = (200, 0, 0)
-GREEN = (0, 200, 0)
-BRIGHT_RED = (255, 0, 0)
-BRIGHT_GREEN = (0, 255, 0)
+YELLOW_FOR_DOTS = (232, 167, 2)
 DARK_BLUE = (0, 0, 80)
+GREY = (130, 130, 120)
+BLUE_FOR_BORDERS = (0, 0, 120)
 pygame.font.init()
 
 
@@ -60,7 +58,7 @@ def button(msg, x, y, w, h, ic, ac, action=''):
 
 
 def game_is_over_message(message):
-    coordinates = ((0, HEIGHT / 6), (WIDTH, HEIGHT * 3 / 5))
+    coordinates = ((0, HEIGHT / 6 + 20), (WIDTH, HEIGHT * 3 / 5))
     pygame.draw.rect(SCREEN, WHITE, coordinates)
     text = pygame.font.Font(None, 115)
     text_surf, text_rect = text_objects(message, text, DARK_BLUE)
@@ -78,6 +76,8 @@ def game_intro():
                 pygame.quit()
                 quit()
         SCREEN.fill(DARK_BLUE)
+
+        # --- текст для экрана меню ---
         large_text = pygame.font.Font(None, 115)
         text_surf, text_rect = text_objects("PAC-MAN", large_text, YELLOW)
         text_rect.center = ((WIDTH / 2), (HEIGHT / 4))
@@ -119,9 +119,9 @@ def main(size, file_name, speed, start):
     # создание экземпляра точки-бонуса
     bonus = Bonus(score)
     # создание экземпляров приведений
-    red_enemy = Enemy((252, 44, 0), 1, speed)
-    pink_enemy = Enemy((253, 192, 179), 2, speed)
-    orange_enemy = Enemy((255, 140, 0), 3, speed)
+    red_enemy = Enemy(1, speed)
+    pink_enemy = Enemy(2, speed)
+    orange_enemy = Enemy(3, speed)
     # создание экземпляра PacmanMoves, который задает движение пакмана и приведений
     pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus)
 
@@ -183,12 +183,12 @@ class Labyrinth:
         # цвета для  каждого символа в лабиринте
         # 0 - стена,
         # 1 - можно ходить(по белому), де есть точки,
-        # 5 - можно ходить, но точек нет,
+        # 2 - могут ходить только приведения,
         # 3 - места для бонусов,
-        # 9 - место за полем,
-        # 2 - могут ходить только приведения
-        colors = {0: (0, 0, 120), 1: (255, 255, 255), 3: (255, 255, 255),
-                  9: (0, 0, 0), 2: (130, 130, 120), 5: (255, 255, 255)}
+        # 5 - можно ходить, но точек нет,
+        # 9 - место за полем
+        colors = {0: BLUE_FOR_BORDERS, 1: WHITE, 3: WHITE,
+                  9: BLACK, 2: GREY, 5: WHITE}
         for y in range(self.height):
             for x in range(self.width):
                 if self.get_tile_id((x, y)) == 1:
@@ -254,7 +254,7 @@ class Pacman:
     def make(self, screen):
         # создание пакмана в виде шарика
         center = self.x * TILE_SIZE + TILE_SIZE // 2, 25 + self.y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 2)
+        pygame.draw.circle(screen, YELLOW_FOR_DOTS, center, TILE_SIZE // 2)
 
     def start_position(self, labyrinth):
         x = random.randint(1, self.labyrinth.width - 1)
@@ -268,11 +268,10 @@ class Pacman:
 class Enemy:
     # создание врага, скорость которого задается в меню пакмана
     # чем выше уровень, тем выше скорость
-    def __init__(self, color, number, speed):
+    def __init__(self, number, speed):
         self.x, self.y = self.start_position(number)
         self.speed = speed
         pygame.time.set_timer(ENEMY_EVENT, self.speed)
-        self.color = color
 
         # передавание картинок приведений
         if number == 1:
@@ -376,13 +375,13 @@ class PacmanMoves:
         self.labyrinth.map[new_y][new_x] = 5
         self.score += 10
         center = new_x * TILE_SIZE + TILE_SIZE // 2, 25 + new_y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
+        pygame.draw.circle(screen, BLACK, center, TILE_SIZE // 2)
 
     def plus_bonus(self, screen, new_x, new_y):
         self.labyrinth.map[new_y][new_x] = 5
         self.score += 50
         center = new_x * TILE_SIZE + TILE_SIZE // 2, 25 + new_y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, (0, 0, 0), center, TILE_SIZE // 2)
+        pygame.draw.circle(screen, BLACK, center, TILE_SIZE // 2)
 
     def move_red_enemy(self):
         # переход к функции find_path_step для получения следующей позиции
@@ -466,7 +465,7 @@ class Dots:
             for j in range(len(labyrinth.map[0])):
                 if labyrinth.map[i][j] == 1:
                     center = j * TILE_SIZE + TILE_SIZE // 2, 25 + i * TILE_SIZE + TILE_SIZE // 2
-                    pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 6)
+                    pygame.draw.circle(screen, YELLOW_FOR_DOTS, center, TILE_SIZE // 6)
 
 
 class Bonus:
@@ -479,7 +478,7 @@ class Bonus:
             for j in range(len(labyrinth.map[0])):
                 if labyrinth.map[i][j] == 3:
                     center = j * TILE_SIZE + TILE_SIZE // 2, 25 + i * TILE_SIZE + TILE_SIZE // 2
-                    pygame.draw.circle(screen, (232, 167, 2), center, TILE_SIZE // 3)
+                    pygame.draw.circle(screen, YELLOW_FOR_DOTS, center, TILE_SIZE // 3)
                     self.all_bonus += 1
 
     def get_bonus(self):
