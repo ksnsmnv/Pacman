@@ -188,7 +188,7 @@ class Labyrinth:
         # 5 - можно ходить, но точек нет,
         # 9 - место за полем
         colors = {0: BLUE_FOR_BORDERS, 1: WHITE, 3: WHITE,
-                  9: BLACK, 2: GREY, 5: WHITE}
+                  9: BLACK, 2: WHITE, 5: WHITE}
         for y in range(self.height):
             for x in range(self.width):
                 if self.get_tile_id((x, y)) == 1:
@@ -287,11 +287,11 @@ class Enemy:
     # начальная позиция пакмана
     def start_position(self, number):
         if number == 1:
-            return 1, 1
+            return 11, 14
         elif number == 2:
-            return 2, 1
+            return 12, 14
         elif number == 3:
-            return 3, 1
+            return 13, 14
 
     def get_position(self):
         return self.x, self.y
