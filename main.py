@@ -191,7 +191,7 @@ def main(size, file_name, speed, start):
                 pygame.draw.rect(screen, BLACK, coordinates)
 
                 lives_left -= 1
-                message = 'You have ' + str(lives_left) + ' lives left'
+                message = 'You have ' + str(lives_left + 1) + ' lives left'
                 small_text = pygame.font.Font(None, 24)
                 text_surf, text_rect = text_objects(message, small_text)
                 text_rect.center = (WIDTH // 2, HEIGHT - (TILE_SIZE // 2))
