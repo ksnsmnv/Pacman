@@ -12,14 +12,17 @@ SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 YELLOW = (245, 208, 51)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-YELLOW_FOR_DOTS = (232, 167, 2)
+YELLOW_FOR_DOTS = (255, 230, 2)
 DARK_BLUE = (0, 0, 80)
 GREY = (130, 130, 120)
 BLUE_FOR_BORDERS = (0, 0, 120)
+WINNING_MESSAGE = ['Congrats!', 'You won!', 'Hurray!', 'Gorgeous!', 'Cool!', 'Amazing!']
+LOOSING_MESSAGE = ['You lost!', 'Maybe next time...', 'You can do better!']
+ENEMY_START_POS = [(11, 14), (12, 14), (13, 14)]
 pygame.font.init()
 
 
-# оздание текстового объекта
+# создание текстового объекта
 def text_objects(text, font, color=WHITE):
     text_surface = font.render(text, True, color)
     return text_surface, text_surface.get_rect()
@@ -57,10 +60,10 @@ def button(msg, x, y, w, h, ic, ac, action=''):
     SCREEN.blit(text_surf, text_rect)
 
 
-def game_is_over_message(message):
+def game_is_over_message(message, size=115):
     coordinates = ((0, HEIGHT / 6 + 20), (WIDTH, HEIGHT * 3 / 5))
     pygame.draw.rect(SCREEN, WHITE, coordinates)
-    text = pygame.font.Font(None, 115)
+    text = pygame.font.Font(None, size)
     text_surf, text_rect = text_objects(message, text, DARK_BLUE)
     text_rect.center = ((WIDTH / 2), (HEIGHT / 2))
     SCREEN.blit(text_surf, text_rect)
@@ -69,6 +72,7 @@ def game_is_over_message(message):
 
 # создание экрана меню
 def game_intro():
+    pygame.display.set_caption('main menu')
     intro = True
     while intro:
         for event in pygame.event.get():
@@ -99,8 +103,11 @@ def game_intro():
 
 
 def main(size, file_name, speed, start):
+    pygame.display.set_caption('pac-man')
     pygame.init()
     screen = pygame.display.set_mode(size)
+    # количество оставшихся жизней на начало игры
+    lives_left = 2
 
     # появление на экране счета игрока
     large_text = pygame.font.Font(None, 24)
@@ -108,22 +115,30 @@ def main(size, file_name, speed, start):
     text_rect.center = ((TILE_SIZE * 5), (TILE_SIZE / 2))
     screen.blit(text_surf, text_rect)
 
+    # количество жизней на начало игры
+    message = 'You have ' + str(lives_left + 1) + ' lives left'
+    small_text = pygame.font.Font(None, 24)
+    text_surf, text_rect = text_objects(message, small_text)
+    text_rect.center = (WIDTH // 2, HEIGHT - (TILE_SIZE // 2))
+    SCREEN.blit(text_surf, text_rect)
+
     # счет игрока на начало игры
     score = 0
-    # создание экзепляра лабиринта (из текствого файла в матрицу)
+    # лабиринт (из текствого файла в двумерный список)
     labyrinth = Labyrinth(file_name)
-    # создание экземпляра пакмана
+    # пакман
     pacman = Pacman(labyrinth)
-    # создание экземпляра точек
+    # обычные точки
     dots = Dots()
-    # создание экземпляра точки-бонуса
+    # точки-бонусы
     bonus = Bonus(score)
-    # создание экземпляров приведений
+    # приведения
     red_enemy = Enemy(1, speed)
     pink_enemy = Enemy(2, speed)
     orange_enemy = Enemy(3, speed)
-    # создание экземпляра PacmanMoves, который задает движение пакмана и приведений
-    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus)
+    # PacmanMoves задает движение пакмана и приведений
+    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots,
+                               red_enemy, pink_enemy, orange_enemy, bonus)
 
     clock = pygame.time.Clock()
     game_over = False
@@ -144,19 +159,57 @@ def main(size, file_name, speed, start):
 
         # перемещение пакмана, если игра не закончена
         if not game_over:
-            pacman_moves.change_pos(screen)
-        else:
+            direction = pacman_moves.change_pos(screen)
+            if pacman_moves.get_direction(direction) == 'make_a_circle':
+                # создание изображений элементов игры
+                pacman_moves.make(False)
+            else:
+                pacman_moves.make(pacman_moves.get_direction(direction))
+
+        # если не осталось жизней, выводится сообщение и через 3 секунды происходит переход к экранк меню
+        elif game_over and (not lives_left or has_won):
             if has_won and game_over:
-                game_is_over_message('You won')
+                message = random.choice(WINNING_MESSAGE)
+                if len(message) > 13:
+                    game_is_over_message(message, HEIGHT // len(message) * 2)
+                else:
+                    game_is_over_message(message)
             elif game_over:
-                game_is_over_message('You lost')
+                message = random.choice(LOOSING_MESSAGE)
+                if len(message) > 13:
+                    game_is_over_message(message, HEIGHT // len(message) * 2)
+                else:
+                    game_is_over_message(message)
             time.sleep(3)
             game_intro()
+
+        # если остались жизни, внизу печатается количество жизней и через 2 секунды игра начинается заново
+        # при этом съеденные точки заново не появляются
+        else:
+            if game_over:
+                coordinates = ((0, HEIGHT - TILE_SIZE), (WIDTH, HEIGHT))
+                pygame.draw.rect(screen, BLACK, coordinates)
+
+                lives_left -= 1
+                message = 'You have ' + str(lives_left) + ' lives left'
+                small_text = pygame.font.Font(None, 24)
+                text_surf, text_rect = text_objects(message, small_text)
+                text_rect.center = (WIDTH // 2, HEIGHT - (TILE_SIZE // 2))
+                SCREEN.blit(text_surf, text_rect)
+
+                # заново задаем положение пакмана и призраков
+                start = pacman.start_position(labyrinth)
+                pacman.set_position(start)
+                start = red_enemy.start_position(1)
+                red_enemy.set_position(start)
+                start = orange_enemy.start_position(2)
+                orange_enemy.set_position(start)
+                start = pink_enemy.start_position(3)
+                pink_enemy.set_position(start)
+                game_over = False
+
         # вывод текущего счета на экран
         pacman_moves.change_score(screen)
-        # создание изображений элементов игры
-        pacman_moves.make()
-
         # проверка на то, выиграл или проиграл ли игрок
         if pacman_moves.won():
             has_won = True
@@ -180,7 +233,7 @@ class Labyrinth:
 
     def make(self, screen):
         self.maximum_score = 0
-        # цвета для  каждого символа в лабиринте
+        # цвета для  каждого символа в лабиринте:
         # 0 - стена,
         # 1 - можно ходить(по белому), де есть точки,
         # 2 - могут ходить только приведения,
@@ -251,7 +304,13 @@ class Pacman:
     def get_position(self):
         return self.x, self.y
 
-    def make(self, screen):
+    def make(self, screen, file):
+        image = pygame.image.load(file).convert_alpha()
+        static_pacman = pygame.transform.scale(image, (20, 20))
+        center = self.x * TILE_SIZE, 25 + self.y * TILE_SIZE
+        screen.blit(static_pacman, center)
+
+    def make_as_circle(self, screen):
         # создание пакмана в виде шарика
         center = self.x * TILE_SIZE + TILE_SIZE // 2, 25 + self.y * TILE_SIZE + TILE_SIZE // 2
         pygame.draw.circle(screen, YELLOW_FOR_DOTS, center, TILE_SIZE // 2)
@@ -287,11 +346,11 @@ class Enemy:
     # начальная позиция пакмана
     def start_position(self, number):
         if number == 1:
-            return 11, 14
+            return ENEMY_START_POS[0]
         elif number == 2:
-            return 12, 14
+            return ENEMY_START_POS[1]
         elif number == 3:
-            return 13, 14
+            return ENEMY_START_POS[2]
 
     def get_position(self):
         return self.x, self.y
@@ -317,11 +376,15 @@ class PacmanMoves:
         self.dots = dots
         self.bonus = bonus
         self.points = 0
+        self.direction = 'no'
 
     # создание всех частей лабиринта в одной функции
-    def make(self):
+    def make(self, file):
         self.labyrinth.make(self.screen)
-        self.pacman.make(self.screen)
+        if file:
+            self.pacman.make(self.screen, file)
+        else:
+            self.pacman.make_as_circle(self.screen)
         self.dots.make_dots(self.screen, self.labyrinth)
         self.enemy1.make(self.screen)
         self.enemy2.make(self.screen)
@@ -335,8 +398,10 @@ class PacmanMoves:
         # для левой клавиши
         if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
             new_x += 27
+            self.direction = 'left'
         elif pygame.key.get_pressed()[pygame.K_LEFT]:
             new_x -= 1
+            self.direction = 'left'
             # если эта точка имеет "точку", выполняется функция "plus_point"
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
@@ -346,8 +411,10 @@ class PacmanMoves:
         # для правой клавиши
         if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
             new_x -= 27
+            self.direction = 'right'
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
             new_x += 1
+            self.direction = 'right'
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
             elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
@@ -355,6 +422,7 @@ class PacmanMoves:
         # для верхней клавиши
         if pygame.key.get_pressed()[pygame.K_UP]:
             new_y -= 1
+            self.direction = 'up'
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
             elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
@@ -362,6 +430,7 @@ class PacmanMoves:
         # для нижней клавиши
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             new_y += 1
+            self.direction = 'down'
             if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
                 self.plus_point(screen, new_x, new_y)
             elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
@@ -369,6 +438,7 @@ class PacmanMoves:
         # проверка : свободна ли клетка
         if self.labyrinth.tile_is_free((new_x, new_y)):
             self.pacman.set_position((new_x, new_y))
+        return self.direction
 
     # прибавляется 10 очков к "score" и стирается точка
     def plus_point(self, screen, new_x, new_y):
@@ -390,7 +460,7 @@ class PacmanMoves:
         self.enemy1.set_position(next_position)
 
     def move_pink_enemy(self):
-        #
+        # это привидение следует за клеткой находящийся левее или правее на 4 клетки от пакмана
         position = self.pacman.get_position()
         if self.labyrinth.tile_is_free_for_enemy((position[0], position[1] - 4)):
             next_position = self.labyrinth.find_path_step(self.enemy2.get_position(),
@@ -402,7 +472,7 @@ class PacmanMoves:
             self.enemy2.set_position(next_position)
 
     def move_orange_enemy(self):
-        #
+        # начинает бежать за нами только когда пакман находится в радиусе 12 клеток
         position = self.pacman.get_position()
         position2 = self.enemy3.get_position()
         if abs(position2[0] - position[0]) <= 12 and abs(position2[1] - position[1]) <= 12:
@@ -443,6 +513,7 @@ class PacmanMoves:
         if number_of_ghost == 3:
             return self.pacman.get_position() == self.enemy3.get_position()
 
+    # изменение счета на экране
     def change_score(self, screen):
         large_text = pygame.font.Font(None, 24)
         text_surf, text_rect = self.text_objects(str(self.score), large_text)
@@ -454,6 +525,18 @@ class PacmanMoves:
     def text_objects(self, text, font, color=WHITE):
         text_surface = font.render(text, True, color)
         return text_surface, text_surface.get_rect()
+
+    def get_direction(self, direction):
+        if direction == 'right':
+            return 'pac_man_to_right.gif'
+        elif direction == 'left':
+            return 'pac_man_to_left.gif'
+        elif direction == 'up':
+            return 'pac_man_to_top.gif'
+        elif direction == 'down':
+            return 'pac_man_to_buttom.gif'
+        else:
+            return 'make_a_circle'
 
 
 class Dots:
@@ -470,10 +553,10 @@ class Dots:
 
 class Bonus:
     def __init__(self, score):
+        self.all_bonus = 0
         self.score = score
 
     def make(self, screen, labyrinth):
-        self.all_bonus = 0
         for i in range(len(labyrinth.map)):
             for j in range(len(labyrinth.map[0])):
                 if labyrinth.map[i][j] == 3:
