@@ -1,6 +1,8 @@
 import pygame
 import random
 import time
+from class_labyrinth import Labyrinth
+from class_pacman import Pacman
 
 
 WIDTH, HEIGHT = 560, 650
@@ -219,110 +221,6 @@ def main(size, file_name, speed, start):
         pygame.display.flip()
         clock.tick(10)
     pygame.quit()
-
-
-class Labyrinth:
-    def __init__(self, file_name):
-        self.map = []
-        with open(file_name) as text_lab:
-            for line in text_lab:
-                # создание матрицы либиринта
-                self.map.append(list(map(int, line.split())))
-        self.height = len(self.map)
-        self.width = len(self.map[0])
-
-    def make(self, screen):
-        self.maximum_score = 0
-        # цвета для  каждого символа в лабиринте:
-        # 0 - стена,
-        # 1 - можно ходить(по белому), де есть точки,
-        # 2 - могут ходить только приведения,
-        # 3 - места для бонусов,
-        # 5 - можно ходить, но точек нет,
-        # 9 - место за полем
-        colors = {0: BLUE_FOR_BORDERS, 1: WHITE, 3: WHITE,
-                  9: BLACK, 2: WHITE, 5: WHITE}
-        for y in range(self.height):
-            for x in range(self.width):
-                if self.get_tile_id((x, y)) == 1:
-                    self.maximum_score += 10
-                elif self.get_tile_id((x, y)) == 3:
-                    self.maximum_score += 50
-                rect = pygame.Rect(x * TILE_SIZE, 25 + y * TILE_SIZE,
-                                   TILE_SIZE, TILE_SIZE)
-                screen.fill(colors[self.get_tile_id((x, y))], rect)
-
-    def get_tile_id(self, position):
-        return self.map[position[1]][position[0]]
-
-    # свободна ли клетка для пакмна
-    def tile_is_free(self, position):
-        return self.get_tile_id(position) in FREE_TILES
-
-    # свободна ли клетка для приведений
-    def tile_is_free_for_enemy(self, position):
-        return self.get_tile_id(position) in FREE_TILES_FOR_ENEMY
-
-    # один шаг для приведения
-    def find_path_step(self, first_pos, second_pos):
-        lasted = 1000
-        x, y = first_pos
-        distance = []
-        for _ in range(self.height):
-            distance.append([lasted] * self.width)
-        distance[y][x] = 0
-        past = []
-        for _ in range(self.height):
-            past.append([None] * self.width)
-        q = [(x, y)]
-        while q:
-            x, y = q.pop(0)
-            for dx, dy in (1, 0), (0, 1), (-1, 0), (0, -1):
-                next_x, next_y = x + dx, y + dy
-                if 0 <= next_x < self.width and 0 < next_y < self.height and \
-                        self.tile_is_free_for_enemy((next_x, next_y)) and distance[next_y][next_x] == lasted:
-                    distance[next_y][next_x] = distance[y][x] + 1
-                    past[next_y][next_x] = (x, y)
-                    q.append((next_x, next_y))
-        x, y = second_pos
-        # проверка: был ли на этой клетке пакман или нет
-        if distance[y][x] == lasted or first_pos == second_pos:
-            return first_pos
-        while past[y][x] != first_pos:
-            x, y = past[y][x]
-        return x, y
-
-
-class Pacman:
-    def __init__(self, labyrinth):
-        self.labyrinth = labyrinth
-        self.x, self.y = self.start_position(labyrinth)
-
-    def set_position(self, position):
-        self.x, self.y = position
-
-    def get_position(self):
-        return self.x, self.y
-
-    def make(self, screen, file):
-        image = pygame.image.load(file).convert_alpha()
-        static_pacman = pygame.transform.scale(image, (20, 20))
-        center = self.x * TILE_SIZE, 25 + self.y * TILE_SIZE
-        screen.blit(static_pacman, center)
-
-    def make_as_circle(self, screen):
-        # создание пакмана в виде шарика
-        center = self.x * TILE_SIZE + TILE_SIZE // 2, 25 + self.y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, YELLOW_FOR_DOTS, center, TILE_SIZE // 2)
-
-    def start_position(self, labyrinth):
-        x = random.randint(1, self.labyrinth.width - 1)
-        y = random.randint(1, self.labyrinth.height - 1)
-        while labyrinth.get_tile_id((x, y)) not in FREE_TILES:
-            x = random.randint(1, self.labyrinth.width - 1)
-            y = random.randint(1, self.labyrinth.height - 1)
-        return x, y
-
 
 class Enemy:
     # создание врага, скорость которого задается в меню пакмана
