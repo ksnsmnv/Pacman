@@ -5,9 +5,6 @@ TILE_SIZE = 20
 
 
 class Dots:
-    def __init__(self):
-        pass
-
     def make_dots(self, screen, labyrinth):
         for i in range(len(labyrinth.map)):
             for j in range(len(labyrinth.map[0])):

@@ -6,6 +6,7 @@ from class_pacman import Pacman
 from class_enemy import Enemy
 from class_pacman_moves import PacmanMoves
 from class_move_enemy import EnemyMoves
+from class_dots_and_bonus import Dots, Bonus
 
 
 WIDTH, HEIGHT = 560, 650
@@ -222,35 +223,6 @@ def main(size, file_name, speed, start):
         pygame.display.flip()
         clock.tick(10)
     pygame.quit()
-
-
-class Dots:
-    def __init__(self):
-        pass
-
-    def make_dots(self, screen, labyrinth):
-        for i in range(len(labyrinth.map)):
-            for j in range(len(labyrinth.map[0])):
-                if labyrinth.map[i][j] == 1:
-                    center = j * TILE_SIZE + TILE_SIZE // 2, 25 + i * TILE_SIZE + TILE_SIZE // 2
-                    pygame.draw.circle(screen, YELLOW_FOR_DOTS, center, TILE_SIZE // 6)
-
-
-class Bonus:
-    def __init__(self, score):
-        self.all_bonus = 0
-        self.score = score
-
-    def make(self, screen, labyrinth):
-        for i in range(len(labyrinth.map)):
-            for j in range(len(labyrinth.map[0])):
-                if labyrinth.map[i][j] == 3:
-                    center = j * TILE_SIZE + TILE_SIZE // 2, 25 + i * TILE_SIZE + TILE_SIZE // 2
-                    pygame.draw.circle(screen, YELLOW_FOR_DOTS, center, TILE_SIZE // 3)
-                    self.all_bonus += 1
-
-    def get_bonus(self):
-        return self.all_bonus * 50
 
 
 if __name__ == '__main__':
