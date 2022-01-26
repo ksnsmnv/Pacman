@@ -3,6 +3,8 @@ import random
 import time
 from class_labyrinth import Labyrinth
 from class_pacman import Pacman
+from class_enemy import Enemy
+from class_pacman_moves import PacmanMoves
 
 
 WIDTH, HEIGHT = 560, 650
@@ -138,9 +140,9 @@ def main(size, file_name, speed, start):
     red_enemy = Enemy(1, speed)
     pink_enemy = Enemy(2, speed)
     orange_enemy = Enemy(3, speed)
+    enemy_moves = EnemyMoves(red_enemy, pink_enemy, orange_enemy, screen, labyrinth, pacman)
     # PacmanMoves задает движение пакмана и приведений
-    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots,
-                               red_enemy, pink_enemy, orange_enemy, bonus)
+    pacman_moves = PacmanMoves(screen, labyrinth, pacman, score, dots, bonus, red_enemy, pink_enemy, orange_enemy)
 
     clock = pygame.time.Clock()
     game_over = False
@@ -154,10 +156,10 @@ def main(size, file_name, speed, start):
                 game_intro()
             elif event.type == ENEMY_EVENT:
                 if pacman_moves.flag2(start):
-                    pacman_moves.move_red_enemy()
+                    enemy_moves.move_red_enemy()
                 if pacman_moves.flag(start):
-                    pacman_moves.move_pink_enemy()
-                pacman_moves.move_orange_enemy()
+                    enemy_moves.move_pink_enemy()
+                enemy_moves.move_orange_enemy()
 
         # перемещение пакмана, если игра не закончена
         if not game_over:
@@ -222,134 +224,15 @@ def main(size, file_name, speed, start):
         clock.tick(10)
     pygame.quit()
 
-class Enemy:
-    # создание врага, скорость которого задается в меню пакмана
-    # чем выше уровень, тем выше скорость
-    def __init__(self, number, speed):
-        self.x, self.y = self.start_position(number)
-        self.speed = speed
-        pygame.time.set_timer(ENEMY_EVENT, self.speed)
 
-        # передавание картинок приведений
-        if number == 1:
-            image = pygame.image.load('red1.jpg').convert_alpha()
-            self.new_image = pygame.transform.scale(image, (20, 20))
-        elif number == 2:
-            image = pygame.image.load('pink1.jpg').convert_alpha()
-            self.new_image = pygame.transform.scale(image, (20, 20))
-        elif number == 3:
-            image = pygame.image.load('orange1.jpg').convert_alpha()
-            self.new_image = pygame.transform.scale(image, (20, 20))
-
-    # начальная позиция пакмана
-    def start_position(self, number):
-        if number == 1:
-            return ENEMY_START_POS[0]
-        elif number == 2:
-            return ENEMY_START_POS[1]
-        elif number == 3:
-            return ENEMY_START_POS[2]
-
-    def get_position(self):
-        return self.x, self.y
-
-    def set_position(self, position):
-        self.x, self.y = position
-
-    def make(self, screen):
-        center = self.x * TILE_SIZE, 25 + self.y * TILE_SIZE
-        screen.blit(self.new_image, center)
-
-
-class PacmanMoves:
-    def __init__(self, screen, labyrinth, pacman, score, dots, red_enemy, pink_enemy, orange_enemy, bonus):
-        # инициализация частей программы, которые требуются для выполнения функций этого класса
+class EnemyMoves():
+    def __init__(self, red_enemy, pink_enemy, orange_enemy, screen, labyrinth, pacman):
         self.enemy1 = red_enemy
         self.enemy2 = pink_enemy
         self.enemy3 = orange_enemy
         self.screen = screen
         self.labyrinth = labyrinth
         self.pacman = pacman
-        self.score = score
-        self.dots = dots
-        self.bonus = bonus
-        self.points = 0
-        self.direction = 'no'
-
-    # создание всех частей лабиринта в одной функции
-    def make(self, file):
-        self.labyrinth.make(self.screen)
-        if file:
-            self.pacman.make(self.screen, file)
-        else:
-            self.pacman.make_as_circle(self.screen)
-        self.dots.make_dots(self.screen, self.labyrinth)
-        self.enemy1.make(self.screen)
-        self.enemy2.make(self.screen)
-        self.enemy3.make(self.screen)
-        self.bonus.make(self.screen, self.labyrinth)
-
-    # изменение позиции пакмана
-    def change_pos(self, screen):
-        new_x, new_y = self.pacman.get_position()
-        # --- проверка нажатия клавиш ---
-        # для левой клавиши
-        if pygame.key.get_pressed()[pygame.K_LEFT] and new_x == 0:
-            new_x += 27
-            self.direction = 'left'
-        elif pygame.key.get_pressed()[pygame.K_LEFT]:
-            new_x -= 1
-            self.direction = 'left'
-            # если эта точка имеет "точку", выполняется функция "plus_point"
-            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
-                self.plus_point(screen, new_x, new_y)
-                self.points += 1
-            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
-                self.plus_bonus(screen, new_x, new_y)
-        # для правой клавиши
-        if pygame.key.get_pressed()[pygame.K_RIGHT] and new_x == 27:
-            new_x -= 27
-            self.direction = 'right'
-        elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            new_x += 1
-            self.direction = 'right'
-            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
-                self.plus_point(screen, new_x, new_y)
-            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
-                self.plus_bonus(screen, new_x, new_y)
-        # для верхней клавиши
-        if pygame.key.get_pressed()[pygame.K_UP]:
-            new_y -= 1
-            self.direction = 'up'
-            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
-                self.plus_point(screen, new_x, new_y)
-            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
-                self.plus_bonus(screen, new_x, new_y)
-        # для нижней клавиши
-        if pygame.key.get_pressed()[pygame.K_DOWN]:
-            new_y += 1
-            self.direction = 'down'
-            if self.labyrinth.get_tile_id((new_x, new_y)) == 1:
-                self.plus_point(screen, new_x, new_y)
-            elif self.labyrinth.get_tile_id((new_x, new_y)) == 3:
-                self.plus_bonus(screen, new_x, new_y)
-        # проверка : свободна ли клетка
-        if self.labyrinth.tile_is_free((new_x, new_y)):
-            self.pacman.set_position((new_x, new_y))
-        return self.direction
-
-    # прибавляется 10 очков к "score" и стирается точка
-    def plus_point(self, screen, new_x, new_y):
-        self.labyrinth.map[new_y][new_x] = 5
-        self.score += 10
-        center = new_x * TILE_SIZE + TILE_SIZE // 2, 25 + new_y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, BLACK, center, TILE_SIZE // 2)
-
-    def plus_bonus(self, screen, new_x, new_y):
-        self.labyrinth.map[new_y][new_x] = 5
-        self.score += 50
-        center = new_x * TILE_SIZE + TILE_SIZE // 2, 25 + new_y * TILE_SIZE + TILE_SIZE // 2
-        pygame.draw.circle(screen, BLACK, center, TILE_SIZE // 2)
 
     def move_red_enemy(self):
         # переход к функции find_path_step для получения следующей позиции
@@ -386,56 +269,6 @@ class PacmanMoves:
             next_position = self.labyrinth.find_path_step(position2,
                                                           (step_x, step_y))
             self.enemy3.set_position(next_position)
-
-    # флаг для активации второго приведения
-    def flag(self, start):
-        if self.points >= start[0]:
-            return True
-
-    # флаг для активации первого приведения
-    def flag2(self, start):
-        if self.points >= start[1]:
-            return True
-
-    # проверка: закончились ли точки
-    def won(self):
-        if self.labyrinth.maximum_score == 0:
-            return True
-
-    # проверка: столкнулся ли пакман с приведением
-    def lost(self, number_of_ghost):
-        if number_of_ghost == 1:
-            return self.pacman.get_position() == self.enemy1.get_position()
-        if number_of_ghost == 2:
-            return self.pacman.get_position() == self.enemy2.get_position()
-        if number_of_ghost == 3:
-            return self.pacman.get_position() == self.enemy3.get_position()
-
-    # изменение счета на экране
-    def change_score(self, screen):
-        large_text = pygame.font.Font(None, 24)
-        text_surf, text_rect = self.text_objects(str(self.score), large_text)
-        text_rect.center = ((TILE_SIZE * 9), (TILE_SIZE / 2))
-        coordinates = ((TILE_SIZE * 7, 0), (TILE_SIZE * 10, TILE_SIZE * 1.5))
-        pygame.draw.rect(screen, BLACK, coordinates)
-        screen.blit(text_surf, text_rect)
-
-    def text_objects(self, text, font, color=WHITE):
-        text_surface = font.render(text, True, color)
-        return text_surface, text_surface.get_rect()
-
-    def get_direction(self, direction):
-        if direction == 'right':
-            return 'pac_man_to_right.gif'
-        elif direction == 'left':
-            return 'pac_man_to_left.gif'
-        elif direction == 'up':
-            return 'pac_man_to_top.gif'
-        elif direction == 'down':
-            return 'pac_man_to_buttom.gif'
-        else:
-            return 'make_a_circle'
-
 
 class Dots:
     def __init__(self):
