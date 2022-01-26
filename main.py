@@ -22,8 +22,6 @@ GREY = (130, 130, 120)
 BLUE_FOR_BORDERS = (0, 0, 120)
 WINNING_MESSAGE = ['Congrats!', 'You won!', 'Hurray!', 'Gorgeous!', 'Cool!', 'Amazing!']
 LOOSING_MESSAGE = ['You lost!', 'Maybe next time...', 'You can do better!']
-ENEMY_START_POS = [(11, 14), (12, 14), (13, 14)]
-pygame.font.init()
 
 
 # создание текстового объекта

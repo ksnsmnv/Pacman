@@ -7,7 +7,6 @@ WINNING_MESSAGE = ['Congrats!', 'You won!', 'Hurray!', 'Gorgeous!', 'Cool!', 'Am
 LOOSING_MESSAGE = ['You lost!', 'Maybe next time...', 'You can do better!']
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-pygame.font.init()
 
 
 class PacmanMoves:

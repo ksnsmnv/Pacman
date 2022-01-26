@@ -3,7 +3,6 @@ import pygame
 TILE_SIZE = 20
 ENEMY_EVENT = 20
 ENEMY_START_POS = [(11, 14), (12, 14), (13, 14)]
-pygame.font.init()
 
 
 class Enemy:
